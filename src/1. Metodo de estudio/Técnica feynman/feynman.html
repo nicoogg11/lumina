@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Método Feynman - Apunte de Estudio</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --ink: #303249;
+      --muted: #777991;
+      --paper: #fbfbff;
+      --lilac: #eee9ff;
+      --lav: #d9ceff;
+      --mint: #d9f1e8;
+      --line: #e8e6f1;
+      --violet: #7766c9;
+      --peach: #ffdcd2;
+      --accent-green: #4a8a73;
+      --accent-red: #b6666c;
+      --muted-color: var(--muted);
+      --border-color: var(--line);
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: #f7f6fc;
+      color: var(--ink);
+      margin: 0;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+
+    .header-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--violet);
+      background: var(--lilac);
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    h1 {
+      font: 600 2.2em 'Playfair Display', serif;
+      letter-spacing: -0.5px;
+      margin: 0 0 30px 0;
+      text-align: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 680px;
+    }
+
+    /* Estilo Notion Card */
+    .feynman-card {
+      position: relative;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-top: 4px solid var(--violet);
+      border-radius: 16px;
+      padding: 28px 32px;
+      margin-bottom: 22px;
+      box-shadow: 0 8px 20px rgba(103, 88, 183, 0.06);
+      box-sizing: border-box;
+    }
+
+    .feynman-card.green-accent {
+      border-top-color: var(--accent-green);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .step-label {
+      font: 600 11px 'DM Mono', monospace;
+      color: var(--violet);
+      background: var(--lilac);
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+
+    .green-accent .step-label {
+      color: var(--accent-green);
+      background: var(--mint);
+    }
+
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3em;
+      font-weight: 600;
+      margin: 0 0 12px 0;
+    }
+
+    /* Formateador estilo Notion (limpia Markdown) */
+    .notion-content {
+      font-size: 14.5px;
+      line-height: 1.65;
+      color: var(--ink);
+    }
+
+    .notion-content p {
+      margin: 0 0 12px 0;
+    }
+
+    .notion-content p:last-child {
+      margin-bottom: 0;
+    }
+
+    .notion-content strong {
+      color: var(--ink);
+      font-weight: 600;
+      background: rgba(217, 206, 255, 0.3);
+      padding: 0 4px;
+      border-radius: 3px;
+    }
+
+    .notion-content ul {
+      margin: 8px 0 12px 20px;
+      padding: 0;
+    }
+
+    .notion-content li {
+      margin-bottom: 6px;
+    }
+
+    .notion-content blockquote {
+      margin: 12px 0;
+      padding: 10px 16px;
+      background: var(--paper);
+      border-left: 3px solid var(--violet);
+      border-radius: 0 8px 8px 0;
+      font-style: italic;
+    }
+
+    .key-point {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-bottom: 10px;
+    }
+
+    .key-point-title {
+      font-family: 'Playfair Display', serif;
+      font-weight: 600;
+      color: var(--violet);
+      margin-bottom: 4px;
+      font-size: 1.05em;
+    }
+
+    .key-point-desc {
+      font-size: 13.5px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body>
+
+  <span class="header-tag" id="materia-tag">Materia</span>
+  <h1 id="main-title">Cargando tema...</h1>
+
+  <div class="container" id="feynman-container">
+    <!-- El contenido generado por la IA se renderizará aquí dinámicamente -->
+  </div>
+
+  <script>
+    // =========================================================================
+    // MODIFICABLE POR IA: Reemplaza este objeto con lo que te entregue la IA
+    // =========================================================================
+    const FEYNMAN_DATA = {
+      titulo: "El Modelo Agro-exportador",
+      materia: "Geografía / Historia Argentina",
+      paso1_concepto: "El **modelo agro-exportador** fue un sistema económico implementado en Argentina entre 1880 y 1916. Se basaba en la producción masiva de **materias primas** (lana, carnes, cereales) para exportar a potencias industriales como Gran Bretaña.",
+      paso2_explicacion_simple: "Imagínate que Argentina era como una **gran huerta y granja gigante**. Europa estaba llena de fábricas y personas pero no tenía suficiente tierra para cultivar comida ni producir lana. Entonces hicieron un trato: Argentina ponía la tierra y los alimentos, y Europa ponía las máquinas, el dinero y los trenes.",
+      paso3_lagunas_y_puntos_clave: [
+        {
+          punto: "1. Los tres engranajes del sistema",
+          explicacion: "El modelo funcionaba combinando **Tierra** (abundante en las pampas), **Trabajo** (aportado por los inmigrantes europeos) y **Capital** (inversiones de afuera)."
+        },
+        {
+          punto: "2. La importancia del Ferrocarril",
+          explicacion: "No era solo un medio de transporte, era el **sistema nervioso del comercio**. Permitía llevar los cereales y carnes rápido desde el campo hacia los puertos."
+        },
+        {
+          punto: "3. Avance técnico de la carne",
+          explicacion: "Se pasó de la lana a la carne congelada y luego a la **carne refrigerada (chilled)**, que conservaba mucho mejor el sabor y nutrientes."
+        }
+      ],
+      paso4_analogia_y_resumen: "> **Analogía rápida:** Piensa en Argentina como un proveedor de ingredientes de un restaurante, y Europa como la cocina que prepara el plato. Si la cocina deja de comprar, el proveedor se queda sin ingresos."
+    };
+    // =========================================================================
+
+    // FUNCIÓN PARA INTERPRETAR SIMBOLOS DE IA (MARKDOWN) Y DEJARLO ESTILO NOTION
+    function parseMarkdown(text) {
+      if (!text) return '';
+      return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Negritas
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')             // Cursivas
+        .replace(/^>\s*(.*$)/gim, '<blockquote>$1</blockquote>') // Citas
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+    }
+
+    // FUNCIÓN DE RENDERIZADO
+    function renderFeynman() {
+      document.getElementById('materia-tag').textContent = FEYNMAN_DATA.materia;
+      document.getElementById('main-title').textContent = FEYNMAN_DATA.titulo;
+
+      const container = document.getElementById('feynman-container');
+
+      // PASO 1: Concepto Central
+      const card1 = `
+        <div class="feynman-card">
+          <div class="card-top">
+            <span class="step-label">PASO 1 · CONCEPTO CLAVE</span>
+          </div>
+          <div class="card-title">Concepto Central</div>
+          <div class="notion-content"><p>${parseMarkdown(FEYNMAN_DATA.paso1_concepto)}</p></div>
+        </div>
+      `;
+
+      // PASO 2: Explicación Sencilla
+      const card2 = `
+        <div class="feynman-card">
+          <div class="card-top">
+            <span class="step-label">PASO 2 · EXPLICACIÓN SENCILLA</span>
+          </div>
+          <div class="card-title">¿Cómo se lo explicarías a un niño?</div>
+          <div class="notion-content"><p>${parseMarkdown(FEYNMAN_DATA.paso2_explicacion_simple)}</p></div>
+        </div>
+      `;
+
+      // PASO 3: Puntos Clave y Lagunas
+      let puntosHTML = '';
+      if (FEYNMAN_DATA.paso3_lagunas_y_puntos_clave) {
+        puntosHTML = FEYNMAN_DATA.paso3_lagunas_y_puntos_clave.map(p => `
+          <div class="key-point">
+            <div class="key-point-title">${p.punto}</div>
+            <div class="key-point-desc">${parseMarkdown(p.explicacion)}</div>
+          </div>
+        `).join('');
+      }
+
+      const card3 = `
+        <div class="feynman-card">
+          <div class="card-top">
+            <span class="step-label">PASO 3 · PUNTOS CRÍTICOS REFORZADOS</span>
+          </div>
+          <div class="card-title">Engranajes y Detalles Fundamentales</div>
+          <div>${puntosHTML}</div>
+        </div>
+      `;
+
+      // PASO 4: Analogía y Resumen
+      const card4 = `
+        <div class="feynman-card green-accent">
+          <div class="card-top">
+            <span class="step-label">PASO 4 · SÍNTESIS Y ANALOGÍA</span>
+          </div>
+          <div class="card-title">Regla de Memoria</div>
+          <div class="notion-content">${parseMarkdown(FEYNMAN_DATA.paso4_analogia_y_resumen)}</div>
+        </div>
+      `;
+
+      container.innerHTML = card1 + card2 + card3 + card4;
+    }
+
+    window.onload = renderFeynman;
+  </script>
+</body>
+
+</html>

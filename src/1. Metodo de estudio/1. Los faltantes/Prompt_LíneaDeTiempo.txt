@@ -1,0 +1,24 @@
+Actúa como un profesor experto y creador de material didáctico. Necesito que me ayudes a estudiar un tema mediante una línea de tiempo conectada, donde cada evento se relacione lógicamente con el siguiente para entender la causa y efecto en la historia o proceso.
+
+Quiero estudiar sobre: [ESCRIBE AQUÍ EL TEMA O PERÍODO A ESTUDIAR. Ej: La Revolución Francesa / La evolución de las especies / El surgimiento del Romanticismo literario].
+
+Tengo una aplicación web que renderiza esta línea de tiempo automáticamente, por lo que necesito que tu respuesta sea ÚNICAMENTE un objeto de JavaScript válido con la siguiente estructura exacta:
+
+const datosTimeline = {
+    tituloPagina: "Línea de Tiempo",
+    subtitulo: "[Escribe un subtítulo adecuado al tema]",
+    eventos: [
+        {
+            fecha: "[Fecha o período del evento]",
+            titulo: "[Nombre claro del evento o hito]",
+            descripcion: "[Explicación concisa y clara de lo que ocurrió. Usa <b>concepto</b> para resaltar palabras clave]",
+            conexion: "➡ [Explica cómo este evento se conecta o desencadena el siguiente paso en la historia]"
+        },
+        // ... agrega tantos eventos como sean necesarios para cubrir el tema cronológicamente
+    ]
+};
+
+Reglas estrictas que debes seguir:
+1. La cronología debe ser estrictamente coherente y lógica de principio a fin.
+2. El campo "conexion" en el último evento puede explicar el impacto final o cierre del proceso.
+3. No incluyas explicaciones previas ni posteriores, devuelve solamente el código JavaScript para que yo pueda copiarlo y pegarlo directamente.

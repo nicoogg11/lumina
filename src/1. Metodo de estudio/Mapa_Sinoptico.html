@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa Sinoptico Estilo Escolar</title>
+    <link rel="stylesheet" href="styles.css">
+<style>
+    :root{
+        --ink: #303249;
+        --muted: #777991;
+        --paper: #fbfbff;
+        --lilac: #eee9ff;
+        --lav: #d9ceff;
+        --mint: #d9f1e8;
+        --line: #e8e6f1;
+        --violet: #7766c9;
+        --peach: #ffdcd2;
+    }
+
+    body {
+        font-family: 'DM Sans', sans-serif;
+        background-color: #f7f6fc;
+        background-image:
+            linear-gradient(#eeeafa77 1px, transparent 1px),
+            linear-gradient(90deg, #eeeafa77 1px, transparent 1px);
+        background-size: 28px 28px;
+        background-attachment: fixed;
+        margin: 0;
+        padding: 0;
+        color: var(--ink);
+        line-height: 1.4;
+        overflow-x: hidden;
+    }
+
+    .header-container {
+        text-align: center;
+        padding: 34px 20px 12px 20px;
+        position: relative;
+        z-index: 10;
+    }
+
+    h1 {
+        font: 600 2.1em 'Playfair Display', serif;
+        letter-spacing: -0.5px;
+        margin: 8px 0;
+        color: var(--ink);
+        position: relative;
+        display: inline-block;
+    }
+
+    h1::after { content: none; }
+
+    #scroll-wrapper {
+        width: 100%;
+        height: calc(100vh - 120px);
+        overflow: auto;
+        position: relative;
+        display: flex;
+        justify-content: center;
+    }
+
+    #mapa-container {
+        position: relative;
+        display: inline-block;
+        padding: 40px 80px;
+        min-width: max-content;
+        margin: 0 auto;
+    }
+
+    #svg-lines {
+        position: absolute;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .nodos-wrapper {
+        position: relative;
+        z-index: 1;
+        display: flex;
+    }
+
+    .nivel {
+        display: flex;
+        align-items: center;
+        gap: 60px;
+    }
+
+    .hijos-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 22px;
+    }
+
+    .nodo-texto {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px 18px;
+        box-shadow: 0 6px 16px rgba(103, 88, 183, 0.08);
+        max-width: 260px;
+        font-size: 13.5px;
+        font-weight: 500;
+        position: relative;
+        z-index: 2;
+        transition: all 0.25s ease;
+        transform: none !important;
+    }
+
+    .nodo-texto:hover {
+        transform: translateY(-3px) !important;
+        box-shadow: 0 10px 22px rgba(103, 88, 183, 0.14);
+        cursor: pointer;
+        z-index: 10;
+        border-color: var(--lav);
+    }
+
+    .color-0 { background-color: var(--lilac); }
+    .color-1 { background-color: var(--mint); }
+    .color-2 { background-color: var(--peach); }
+    .color-3 { background-color: #fff1dd; }
+    .color-4 { background-color: #f6e5f0; }
+    .color-5 { background-color: #e4f5ef; }
+    .color-6 { background-color: #e8e2fb; }
+    .color-7 { background-color: #fdf3e4; }
+    .color-8 { background-color: #e8f0fb; }
+    .color-9 { background-color: #f0eef8; }
+
+    #nodos-wrapper > .nivel > .nodo-texto {
+        background: var(--violet) !important;
+        color: #fff;
+        font-weight: 600;
+        font-size: 14.5px;
+    }
+
+    .deco-tape::before,
+    .deco-pin::after,
+    .deco-clip::after {
+        content: none;
+    }
+
+    .sticker { display: none; }
+</style>
+</head>
+<body>
+
+    <div class="header-container" id="header-container">
+        <!-- El título se inyectará aquí desde JS -->
+        <h1 id="titulo-mapa"></h1>
+    </div>
+
+    <div class="sticker" style="top: 15%; left: 5%; transform: rotate(-15deg);">💡</div>
+    <div class="sticker" style="top: 80%; left: 10%; transform: rotate(20deg);">⭐</div>
+    <div class="sticker" style="top: 40%; left: 90%; transform: rotate(10deg);">🚀</div>
+    <div class="sticker" style="top: 85%; left: 85%; transform: rotate(-10deg);">📚</div>
+
+    <div id="scroll-wrapper">
+        <div id="mapa-container">
+            <svg id="svg-lines"></svg>
+            <div id="nodos-wrapper" class="nodos-wrapper"></div>
+        </div>
+    </div>
+
+    <script>
+const datosMapa = {
+    nombre: "Colonización Inglesa de América del Norte e Independencia de EE.UU.",
+    hijos: [
+        {
+            nombre: "Introducción Histórica",
+            hijos: [
+                { nombre: "Ocupación Inglesa de Costa Atlántica: Principios S. XVII" },
+                { nombre: "Lucha por Independencia: Mediados S. XVIII", hijos: [
+                    { nombre: "Contra política opresiva de la Corona Inglesa" }
+                ]},
+                { nombre: "Declaración de Independencia: 1776" },
+                { nombre: "Dictado de Constitución: 1787", hijos: [
+                    { nombre: "Repúblicana y Federal" }
+                ]}
+            ]
+        },
+        {
+            nombre: "Formación de las Trece Colonias",
+            hijos: [
+                { nombre: "Contexto de Ocupación de América del Norte", hijos: [
+                    { nombre: "Países Europeos Involucrados: Francia, España, Holanda, Inglaterra" }
+                ]},
+                { nombre: "Objetivos de la Corona Inglesa (Principios S. XVII)", hijos: [
+                    { nombre: "Asegurar Dominio sobre Territorios" },
+                    { nombre: "Resolver Conflictos Internos en Inglaterra", hijos: [
+                        { nombre: "Entre minorías religiosas y políticas" }
+                    ]}
+                ]},
+                { nombre: "Grupos de Emigrantes a América (en busca de libertad y progreso material)", hijos: [
+                    { nombre: "Minorías Religiosas no Anglicanas", hijos: [
+                        { nombre: "Puritanos" },
+                        { nombre: "Cuáqueros" },
+                        { nombre: "Presbiterianos" },
+                        { nombre: "Católicos" }
+                    ]},
+                    { nombre: "Comunidades Empobrecidas", hijos: [
+                        { nombre: "Irlandeses" },
+                        { nombre: "Escoceses" },
+                        { nombre: "Galeses" }
+                    ]}
+                ]},
+                { nombre: "Proceso de Fundación de Colonias", hijos: [
+                    { nombre: "Compañía de Londres (1606)", hijos: [
+                        { nombre: "Accionistas reciben permiso real para colonizar tierras" },
+                        { nombre: "Fundación de Jamestown, Virginia (1607)", hijos: [
+                            { nombre: "Enfrentamientos violentos con grupos indígenas" },
+                            { nombre: "Consolidación por desarrollo agrícola (cereales y tabaco) y cría de animales" },
+                            { nombre: "Aumento de población", hijos: [
+                                { nombre: "Llegada de jóvenes inglesas solteras" },
+                                { nombre: "Llegada de esclavos (1619)" }
+                            ]}
+                        ]}
+                    ]},
+                    { nombre: "Compañía de la Bahía de Massachusetts", hijos: [
+                        { nombre: "Mayoría de accionistas puritanos (disidentes calvinistas)" },
+                        { nombre: "Desembarco en Plymouth, Massachusetts (1620): Primer grupo de colonos" },
+                        { nombre: "Arribo de comunidades puritanas (1628-1640)", hijos: [
+                            { nombre: "Integrantes: agricultores, artesanos, comerciantes y profesionales" },
+                            { nombre: "Establecimiento en la región nordeste: Nueva Inglaterra" },
+                            { nombre: "Fundación de ocho ciudades: Salem y Boston" },
+                            { nombre: "Éxito debido a la tenacidad de sus habitantes" },
+                            { nombre: "Gobierno por eclesiásticos" },
+                            { nombre: "Características", hijos: [
+                                { nombre: "Rechazo a otras creencias" },
+                                { nombre: "Consideración de indios como seres 'inferiores' a ser eliminados" }
+                            ]}
+                        ]}
+                    ]},
+                    { nombre: "Colonias de mayor tolerancia religiosa (década de 1630)", hijos: [
+                        { nombre: "Maryland" },
+                        { nombre: "Rhode Island" }
+                    ]},
+                    { nombre: "Hostilidad general hacia indígenas y repudio al mestizaje (común a todos los colonos)" },
+                    { nombre: "Apropiación de Nueva Ámsterdam (holandesa) por ingleses (1664)", hijos: [
+                        { nombre: "Origen de la ciudad de Nueva York" }
+                    ]},
+                    { nombre: "Aumento de migraciones de particulares (mediados S. XVII)", hijos: [
+                        { nombre: "Corona entrega tierras por servicios prestados" }
+                    ]},
+                    { nombre: "Resultado final: Trece colonias extendidas de norte a sur en la costa atlántica" }
+                ]},
+                { nombre: "Padres Peregrinos (información adicional)", hijos: [
+                    { nombre: "Primeros colonos puritanos llegados en el barco Mayflower" },
+                    { nombre: "Realización de fiesta de agradecimiento tras primera cosecha de maíz" },
+                    { nombre: "Conmemoración actual: Día de Acción de Gracias (cuarto jueves de noviembre)" }
+                ]}
+            ]
+        },
+        {
+            nombre: "Economía y Sociedad de las Colonias",
+            hijos: [
+                { nombre: "Actividades Económicas Diversas", hijos: [
+                    { nombre: "Agricultura", hijos: [
+                        { nombre: "Cereales y Tabaco" },
+                        { nombre: "Criaza de animales en pequeñas granjas familiares" }
+                    ]},
+                    { nombre: "Explotación de Madera", hijos: [
+                        { nombre: "Para exportación" },
+                        { nombre: "Para construcción de viviendas" }
+                    ]},
+                    { nombre: "Pesca", hijos: [
+                        { nombre: "Instalación de astilleros y fundiciones de hierro" },
+                        { nombre: "Fabricación de herrajes, sogas y velas de barcos" }
+                    ]},
+                    { nombre: "Comercio de Pieles (Actividad Lucrativa)", hijos: [
+                        { nombre: "Tipos de pieles: nutria, visón, oso, zorro" },
+                        { nombre: "Obtenidas de indios a cambio de objetos de metal, telas y baratijas" }
+                    ]}
+                ]},
+                { nombre: "Colonos de Nueva Inglaterra (Búsqueda de Autoabastecimiento)", hijos: [
+                    { nombre: "Numerosas manufacturas", hijos: [
+                        { nombre: "Productos: arados, rastras, carretas, muebles, ruedas, telares, zapatos, sombreros, paños, alfombras, frazadas, velas, jabón, ropa, conservas de frutas y hortalizas" }
+                    ]},
+                    { nombre: "Factores decisivos: mano de obra abundante y trabajo comunitario" },
+                    { nombre: "Grado de independencia económica", hijos: [
+                        { nombre: "Diferencia con colonias ibéricas, más dependientes de la metrópoli" }
+                    ]}
+                ]},
+                { nombre: "Diferenciación de Áreas (S. XVIII)", hijos: [
+                    { nombre: "Colonias del Norte", hijos: [
+                        { nombre: "Dedicadas a agricultura, comercio y manufacturas" }
+                    ]},
+                    { nombre: "Colonias del Sur", hijos: [
+                        { nombre: "Instalación de plantaciones (tabaco, arroz y algodón)" }
+                    ]}
+                ]},
+                { nombre: "Sociedad en las Colonias del Norte (Gran Movilidad Social Ascendente)", hijos: [
+                    { nombre: "Crecimiento económico permitido por la Corona" },
+                    { nombre: "Origen de una burguesía", hijos: [
+                        { nombre: "Relacionada con industria, comercio, finanzas y profesiones" }
+                    ]},
+                    { nombre: "Sirvientes Contratados (provenientes de Inglaterra)", hijos: [
+                        { nombre: "Contratados por unos años para tareas agrícolas, domésticas o artesanales" },
+                        { nombre: "Podían convertirse en propietarios o artesanos al terminar contrato" }
+                    ]},
+                    { nombre: "Obreros Especializados", hijos: [
+                        { nombre: "Realizaban manufacturas de lujo: muebles finos, vajilla de plata" },
+                        { nombre: "Contribución a cambiar hábitos de vida" }
+                    ]},
+                    { nombre: "Desarrollo Urbano", hijos: [
+                        { nombre: "Mejores edificios" },
+                        { nombre: "Comerciantes agrandan y embellecen casas" }
+                    ]}
+                ]},
+                { nombre: "Sociedad en las Colonias del Sur (Más Conservadora)", hijos: [
+                    { nombre: "Élite", hijos: [
+                        { nombre: "Grupo de terratenientes dueños de plantaciones" },
+                        { nombre: "Unidos por lazos de parentesco, costumbres y opiniones" }
+                    ]},
+                    { nombre: "Mayoría de Esclavos", hijos: [
+                        { nombre: "Sujetos de por vida a sus amos" }
+                    ]}
+                ]},
+                { nombre: "Glosario: El Tabaco de Virginia (INFO)", hijos: [
+                    { nombre: "Planta de origen americano, usada con fines rituales por indígenas" },
+                    { nombre: "Hábito de fumar en pipas llevado a Inglaterra por Sir Walter Raleigh" },
+                    { nombre: "Primera colonia inglesa en Virginia (1584), fracaso inicial" },
+                    { nombre: "Establecimiento en Jamestown (1609), supervivencia difícil" },
+                    { nombre: "Autorización real para entrada de tabaco en Inglaterra (1616) por Jacobo I" },
+                    { nombre: "Exportación de diez toneladas por Virginia (1619)" },
+                    { nombre: "Cultivo extendido a Carolina del Norte" },
+                    { nombre: "Prosperidad por difusión de consumo y adicción en Europa" },
+                    { nombre: "Principal rubro de exportación de América del Norte" }
+                ]}
+            ]
+        },
+        {
+            nombre: "El Gobierno de las Colonias",
+            hijos: [
+                { nombre: "Dependencia", hijos: [
+                    { nombre: "Directamente del Rey" }
+                ]},
+                { nombre: "Gobierno Local Organizado (Modalidades)", hijos: [
+                    { nombre: "Gobierno Provincial", hijos: [
+                        { nombre: "Gobernador enviado por el Rey" }
+                    ]},
+                    { nombre: "Gobierno de Cartas", hijos: [
+                        { nombre: "Gobernador elegido por los colonos" },
+                        { nombre: "Derecho concedido por el Rey a través de una carta" }
+                    ]},
+                    { nombre: "Gobierno de Propietarios", hijos: [
+                        { nombre: "Gobernador elegido por integrantes de compañías comerciales fundadoras" }
+                    ]}
+                ]},
+                { nombre: "Asamblea Legislativa (en cada colonia)", hijos: [
+                    { nombre: "Integrada por representantes de los colonos" },
+                    { nombre: "Requisitos para cargo", hijos: [
+                        { nombre: "Propietarios de tierras" },
+                        { nombre: "Cierto nivel de ingresos" }
+                    ]},
+                    { nombre: "Jueces", hijos: [
+                        { nombre: "Nombrados por el Rey" },
+                        { nombre: "Aplicaban la ley inglesa" }
+                    ]}
+                ]},
+                { nombre: "Relación con Indígenas", hijos: [
+                    { nombre: "Acuerdos de delimitación de territorios (no respetados)" }
+                ]}
+            ]
+        },
+        {
+            nombre: "La Rebelión de los Colonos contra la Corona",
+            hijos: [
+                { nombre: "Contexto (S. XVIII)", hijos: [
+                    { nombre: "Prosperidad económica de colonos" },
+                    { nombre: "Obstáculos al desarrollo pleno", hijos: [
+                        { nombre: "Dependencia política" },
+                        { nombre: "Monopolio inglés sobre el comercio" }
+                    ]},
+                    { nombre: "Difusión de ideas de la Ilustración (desde Londres)" },
+                    { nombre: "Nueva política colonial de la Corona: maximizar beneficios de dominios americanos" }
+                ]},
+                { nombre: "Guerra de los Siete Años (1763)", hijos: [
+                    { nombre: "Contendientes: Francia e Inglaterra" },
+                    { nombre: "Resultados", hijos: [
+                        { nombre: "Francia entrega a Inglaterra: Canadá y territorios entre los montes Apalaches y el río Mississippi" }
+                    ]},
+                    { nombre: "Expectativa de colonos: explotación de nuevos territorios" },
+                    { nombre: "Decisión del Rey: se reserva el derecho de distribuir nuevas tierras" }
+                ]},
+                { nombre: "Impuestos y Medidas Opresivas Post-Guerra", hijos: [
+                    { nombre: "Tesoro británico sin recursos" },
+                    { nombre: "Leyes aprobadas por el Parlamento inglés", hijos: [
+                        { nombre: "Impuesto de sellado (1765)", hijos: [
+                            { nombre: "Aplicado a trámites administrativos" },
+                            { nombre: "Reacción de colonos: Congreso, solicitud de revocación (no gravar sin consentimiento)" },
+                            { nombre: "Respuesta de Corona: Retira la ley" }
+                        ]},
+                        { nombre: "Impuestos sobre productos (1767)", hijos: [
+                            { nombre: "Aplicados a: té, papel, vidrio y plomo" },
+                            { nombre: "Reacción de colonos: Boicot* a mercaderías inglesas" }
+                        ]}
+                    ]}
+                ]},
+                { nombre: "Glosario: Boicot*", hijos: [
+                    { nombre: "Acción de privar de relaciones comerciales" },
+                    { nombre: "Negativa a comprar productos de cierta empresa o país" }
+                ]}
+            ]
+        },
+        {
+            nombre: "La Independencia de los Estados Unidos",
+            hijos: [
+                { nombre: "Escalada de Hostilidad (Aumento de dominación inglesa)", hijos: [
+                    { nombre: "Protesta en Boston (1770)", hijos: [
+                        { nombre: "Reprimida por tropas británicas" },
+                        { nombre: "Saldo: 5 personas asesinadas" }
+                    ]},
+                    { nombre: "Medidas para calmar ánimos (Corona retira impuestos)", hijos: [
+                        { nombre: "Excepción: impuesto del té" },
+                        { nombre: "Monopolio del comercio del té por la Compañía de las Indias Orientales" }
+                    ]},
+                    { nombre: "Motín del Té (1773)", hijos: [
+                        { nombre: "Bostonianos se apoderan y arrojan cargamento de té al mar" }
+                    ]},
+                    { nombre: "Reacción del Gobierno Inglés (Medidas severas)", hijos: [
+                        { nombre: "Clausura del puerto de Boston" },
+                        { nombre: "Prohibición de reuniones públicas" },
+                        { nombre: "Reemplazo de funcionarios americanos por británicos" },
+                        { nombre: "Envío de más tropas" }
+                    ]}
+                ]},
+                { nombre: "Congresos y Guerra de Independencia", hijos: [
+                    { nombre: "Primer Congreso General (Filadelfia, 1774)", hijos: [
+                        { nombre: "Decisión de proseguir el boicot a mercaderías inglesas" }
+                    ]},
+                    { nombre: "Segundo Congreso de Filadelfia (1775)", hijos: [
+                        { nombre: "Elección de George Washington como jefe de las fuerzas norteamericanas" },
+                        { nombre: "Envío de diplomáticos para buscar ayuda en naciones europeas" },
+                        { nombre: "Rey Jorge III declara rebeldes a los colonos" },
+                        { nombre: "Comienzo de la Guerra de Independencia" }
+                    ]},
+                    { nombre: "Declaración de Independencia de los Estados Unidos de América (4 de julio de 1776)" }
+                ]},
+                { nombre: "Desarrollo de la Guerra", hijos: [
+                    { nombre: "Inicio desfavorable para norteamericanos", hijos: [
+                        { nombre: "Carecían de soldados profesionales" },
+                        { nombre: "Disponían solo de milicianos" }
+                    ]},
+                    { nombre: "Reorganización de tropas por Washington", hijos: [
+                        { nombre: "Formación del Ejército Continental" }
+                    ]},
+                    { nombre: "Ayuda militar externa: Francia y España" },
+                    { nombre: "Victoria de Yorktown (1781)", hijos: [
+                        { nombre: "Triunfo militar norteamericano" },
+                        { nombre: "Rendición del principal ejército británico" },
+                        { nombre: "Fin de la guerra" }
+                    ]},
+                    { nombre: "Tratado de Paz de París (Dos años después)", hijos: [
+                        { nombre: "Reconocimiento de la independencia de la nueva nación" }
+                    ]}
+                ]},
+                { nombre: "INFO: George Washington (Personaje Clave)", hijos: [
+                    { nombre: "Datos biográficos", hijos: [
+                        { nombre: "Fechas: 22 de febrero de 1732 - 14 de diciembre de 1799" },
+                        { nombre: "Primer Presidente de los Estados Unidos (1789-1797)" },
+                        { nombre: "Origen: Familia inglesa de Northamptonshire, llegada a América a mediados del S. XVII" },
+                        { nombre: "Fortuna: Amasó considerable fortuna" },
+                        { nombre: "Propiedad: Heredó plantación de Mount Vernon (8.000 acres y 18 esclavos)" }
+                    ]},
+                    { nombre: "Actividad Pública", hijos: [
+                        { nombre: "Distinguido en asuntos de la comunidad" },
+                        { nombre: "Miembro activo de la Iglesia Episcopal" },
+                        { nombre: "Candidato a la Cámara de los Burgueses del distrito (1755)" },
+                        { nombre: "Comandante en jefe de fuerzas estadounidenses en Guerra de Independencia (1775-1783)" },
+                        { nombre: "Primer Presidente de EE.UU. de Norteamérica", hijos: [
+                            { nombre: "Electo por primera vez en 1789, reelegido por cuatro años" },
+                            { nombre: "Establecimiento de bases del sistema institucional" },
+                            { nombre: "Creación de departamentos (ministerios) de administración nacional" },
+                            { nombre: "Inicio de establecimiento de capital federal (Distrito de Columbia, luego bautizado con su nombre)" }
+                        ]},
+                        { nombre: "Reconocimiento: 'Padre de la Nación estadounidense'" }
+                    ]}
+                ]}
+            ]
+        },
+        {
+            nombre: "La Constitución de los Estados Unidos",
+            hijos: [
+                { nombre: "Primeros Años de Independencia (Confederación)", hijos: [
+                    { nombre: "Trece estados se consideraban soberanos" },
+                    { nombre: "No dispuestos a delegar poder en gobierno central fuerte" },
+                    { nombre: "Problemas: serios conflictos internos y económicos" }
+                ]},
+                { nombre: "Necesidad de Autoridad Central", hijos: [
+                    { nombre: "Convención en Filadelfia (1786)", hijos: [
+                        { nombre: "Presidencia de Washington" },
+                        { nombre: "Dicta Constitución republicana (1787)" }
+                    ]}
+                ]},
+                { nombre: "Organización de Estados Unidos (Federación)", hijos: [
+                    { nombre: "Estados miembros disponen de amplia autonomía" },
+                    { nombre: "Facultades del Gobierno Central", hijos: [
+                        { nombre: "Cobrar impuestos" },
+                        { nombre: "Acuñar moneda" },
+                        { nombre: "Poseer fuerzas armadas" },
+                        { nombre: "Reglamentar comercio exterior" },
+                        { nombre: "Mantener relaciones exteriores" }
+                    ]},
+                    { nombre: "Sistema de División de Poderes", hijos: [
+                        { nombre: "Poder Ejecutivo", hijos: [
+                            { nombre: "Ejercido por un presidente" },
+                            { nombre: "Duración del cargo: cuatro años" },
+                            { nombre: "Primer presidente: Washington (1789)" }
+                        ]},
+                        { nombre: "Poder Legislativo", hijos: [
+                            { nombre: "Compuesto por dos Cámaras: Representantes y Senado" }
+                        ]},
+                        { nombre: "Poder Judicial", hijos: [
+                            { nombre: "Organizado con una Corte Suprema de nueve miembros" },
+                            { nombre: "Varios tribunales federales" }
+                        ]}
+                    ]}
+                ]},
+                { nombre: "Enmiendas a la Constitución", hijos: [
+                    { nombre: "Constitución original no tenía declaración de derechos" },
+                    { nombre: "Diez enmiendas agregadas", hijos: [
+                        { nombre: "Asegurar libertades de: reunión, expresión, culto, petición a autoridades, poseer armas de fuego" }
+                    ]},
+                    { nombre: "Limitación: No extensiva a los esclavos", hijos: [
+                        { nombre: "Esclavos considerados propiedad privada de amos" },
+                        { nombre: "Excluidos de derechos constitucionales" }
+                    ]}
+                ]},
+                { nombre: "INFO: Declaración de la Independencia", hijos: [
+                    { nombre: "Óleo de John Trumbull" },
+                    { nombre: "Representa el momento en que el Congreso de las trece colonias decide constituir una nación soberana" }
+                ]}
+            ]
+        },
+        {
+            nombre: "Personajes Relevantes: Benjamin Franklin (Biografía Detallada)",
+            hijos: [
+                { nombre: "Datos Personales y Origen", hijos: [
+                    { nombre: "Nacimiento: Boston, 1706" },
+                    { nombre: "Infancia: Estudios básicos, ayuda a padre en fábrica de velas y jabones" },
+                    { nombre: "Primeros Oficios (hasta los 12 años): marino, carpintero, albañil, tornero" }
+                ]},
+                { nombre: "Carrera y Formación", hijos: [
+                    { nombre: "Aprendiz de imprenta (con su hermano)" },
+                    { nombre: "Escritor de artículos periodísticos críticos (15 años)" },
+                    { nombre: "Establecimiento en Filadelfia (1723)" },
+                    { nombre: "Viaje a Inglaterra para formarse como impresor (1724)" },
+                    { nombre: "Regreso a Filadelfia (1726): trabajó como administrativo y participó en fundación de club intelectual" },
+                    { nombre: "Instala su primera imprenta y compra periódico 'La Gaceta de Pensilvania' (1730)" },
+                    { nombre: "Matrimonio (1730)" }
+                ]},
+                { nombre: "Contribuciones y Actividades", hijos: [
+                    { nombre: "Fundación de instituciones", hijos: [
+                        { nombre: "Biblioteca pública" },
+                        { nombre: "Primer cuerpo de bomberos de Filadelfia" },
+                        { nombre: "Universidad de Pensilvania" }
+                    ]},
+                    { nombre: "Actividad Política", hijos: [
+                        { nombre: "Miembro de la Asamblea General de Filadelfia" },
+                        { nombre: "Presidencia de la Sociedad Filosófica Americana" },
+                        { nombre: "Organizó la primera milicia de voluntarios de Pensilvania" }
+                    ]},
+                    { nombre: "Interés Científico (mediados S. XVIII)", hijos: [
+                        { nombre: "Especialmente en fenómenos eléctricos" }
+                    ]},
+                    { nombre: "Inventos", hijos: [
+                        { nombre: "Pararrayos" },
+                        { nombre: "Lentes bifocales" },
+                        { nombre: "Aletas de nadador" },
+                        { nombre: "Armónica de cristal" }
+                    ]},
+                    { nombre: "Miembro de la Royal Society (institución científica inglesa, 1756)" },
+                    { nombre: "Actividad Diplomática (1757-1775): Viajes a Londres como representante de colonos" },
+                    { nombre: "Participación en eventos clave", hijos: [
+                        { nombre: "Redacción de la Declaración de Independencia" },
+                        { nombre: "Representante en Francia" }
+                    ]},
+                    { nombre: "Gobernador de Pensilvania (1785)" },
+                    { nombre: "Participación en elaboración de la Constitución de los Estados Unidos (1787)" },
+                    { nombre: "Presidente de la Sociedad para Promover la Abolición de la Esclavitud (1787)" }
+                ]},
+                { nombre: "Muerte: Filadelfia, 1790" },
+                { nombre: "Considerado un Hombre de la Ilustración" }
+            ]
+        }
+    ]
+};
+
+        // Función para actualizar el título dinámicamente
+        function setTitulo(nuevoTexto) {
+            document.getElementById('titulo-mapa').textContent = nuevoTexto;
+            document.title = nuevoTexto;
+        }
+
+        // Inicializamos el título
+        setTitulo(datosMapa.nombre);
+
+        let nodoCounter = 0;
+        const decoraciones = ['deco-tape', 'deco-pin', 'deco-clip'];
+        const TOTAL_COLORES = 10;
+
+        function generarNodo(datos, parentId = null, nivel = 0) {
+            nodoCounter++;
+            const currentId = `nodo-${nodoCounter}`;
+            const nivelDiv = document.createElement('div');
+            nivelDiv.className = 'nivel';
+
+            const textoDiv = document.createElement('div');
+            const decoAleatoria = decoraciones[Math.floor(Math.random() * decoraciones.length)];
+            
+            textoDiv.className = `nodo-texto color-${nivel % TOTAL_COLORES} ${decoAleatoria}`;
+            textoDiv.id = currentId;
+            textoDiv.innerHTML = datos.nombre;
+            
+            const rotacion = (Math.random() * 6 - 3).toFixed(1);
+            textoDiv.style.transform = `rotate(${rotacion}deg)`;
+            
+            if (parentId) textoDiv.dataset.parentId = parentId;
+            nivelDiv.appendChild(textoDiv);
+
+            if (datos.hijos && datos.hijos.length > 0) {
+                const hijosDiv = document.createElement('div');
+                hijosDiv.className = 'hijos-container';
+                datos.hijos.forEach(hijo => hijosDiv.appendChild(generarNodo(hijo, currentId, nivel + 1)));
+                nivelDiv.appendChild(hijosDiv);
+            }
+            return nivelDiv;
+        }
+
+        document.getElementById('nodos-wrapper').appendChild(generarNodo(datosMapa, null, 0));
+
+        // Devuelve la posicion de un nodo relativa a #mapa-container,
+        // usando propiedades "offset" (layout real) en lugar de
+        // getBoundingClientRect (que incluye el transform: rotate()
+        // y por eso las lineas quedaban desconectadas de las tarjetas).
+        function getPosRelativaAlContainer(el, container) {
+            let x = 0, y = 0;
+            let actual = el;
+            while (actual && actual !== container) {
+                x += actual.offsetLeft;
+                y += actual.offsetTop;
+                actual = actual.offsetParent;
+            }
+            return { x, y, width: el.offsetWidth, height: el.offsetHeight };
+        }
+
+        function dibujarLineas() {
+            const svg = document.getElementById('svg-lines');
+            const container = document.getElementById('mapa-container');
+            svg.setAttribute('width', container.scrollWidth);
+            svg.setAttribute('height', container.scrollHeight);
+            svg.innerHTML = ''; 
+
+            document.querySelectorAll('.nodo-texto').forEach(nodo => {
+                const parentId = nodo.dataset.parentId;
+                if (parentId) {
+                    const parent = document.getElementById(parentId);
+                    const parentPos = getPosRelativaAlContainer(parent, container);
+                    const childPos = getPosRelativaAlContainer(nodo, container);
+
+                    const startX = parentPos.x + parentPos.width;
+                    const startY = parentPos.y + (parentPos.height / 2);
+                    const endX = childPos.x;
+                    const endY = childPos.y + (childPos.height / 2);
+
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', `M ${startX} ${startY} C ${startX + 50} ${startY}, ${endX - 50} ${endY}, ${endX} ${endY}`);
+                    path.setAttribute('fill', 'none');
+                    path.setAttribute('stroke', '#a89bdc'); 
+                    path.setAttribute('stroke-width', '3'); 
+                    svg.appendChild(path);
+                }
+            });
+        }
+
+        // Redibujamos cuando las fuentes terminan de cargar
+        // (si dibujamos antes, el texto cambia de tamano despues y las
+        // tarjetas se mueven, dejando las lineas desalineadas) y ante
+        // cualquier cambio de tamano de ventana.
+        function dibujarLineasSeguro() {
+            dibujarLineas();
+            requestAnimationFrame(dibujarLineas);
+        }
+
+        window.addEventListener('load', dibujarLineasSeguro);
+        window.addEventListener('resize', dibujarLineasSeguro);
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(dibujarLineasSeguro);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+Actúa como un experto en metodologías de estudio.
+A continuación, te voy a proporcionar mis apuntes de estudio. Necesito que los analices y extraigas los conceptos más importantes para crear un mazo de flashcards.
+
+Reglas para el contenido:
+
+Frente de la tarjeta (front): Formula preguntas de "Active Recall", enfocándote en el tipo de preguntas clave que podrían tomarme en una prueba o examen.
+
+Reverso de la tarjeta (back): Redacta la respuesta de forma clara y conversacional, ideal para que yo pueda practicar explicándole el tema a alguien que no sabe nada al respecto. Enfócate en la comprensión general; no importa si falta algún detalle menor, lo vital es el concepto central.
+
+Reglas de formato (Estricto):
+Devuélveme el resultado únicamente como un array de objetos en JavaScript puro. No agregues saludos, explicaciones en markdown, ni confirmaciones. Solo el bloque de código exacto con esta estructura:
+
+JavaScript
+const defaultDeck = [
+    { id: 1, front: "¿Pregunta de examen aquí?", back: "Explicación sencilla aquí...", level: 0, dueDate: 0 },
+    { id: 2, front: "¿Otra pregunta aquí?", back: "Explicación sencilla aquí...", level: 0, dueDate: 0 }
+    // ... agrega todas las tarjetas necesarias
+];
+Aquí están mis apuntes:
+Son los que te envié

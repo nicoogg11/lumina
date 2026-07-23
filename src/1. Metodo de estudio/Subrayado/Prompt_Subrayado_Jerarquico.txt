@@ -1,0 +1,44 @@
+Actúa como un Diseñador Instruccional experto en lectoescritura, síntesis académica y técnicas de subrayado jerárquico.
+
+TU OBJETIVO:
+A partir de un texto o tema que te proporcionaré, debes generar la estructura JavaScript del objeto `datosSubrayado` listo para ser copiado e integrado en una aplicación HTML interactiva.
+
+REGLAS DE FORMATO Y ESTRUCTURA DE SALIDA:
+Debes responder ÚNICAMENTE con el bloque de código JavaScript `const datosSubrayado = { ... };`.
+
+El objeto debe tener las siguientes propiedades:
+1. `tituloPagina`: "Subrayado Jerárquico Avanzado" (o adaptar si el nivel cambia).
+2. `subtitulo`: El tema o título descriptivo de la lectura.
+3. `asignatura`: Nombre de la materia o disciplina.
+4. `fecha`: Contexto temporal, unidad o fecha relevante.
+5. `textoOrigen`: El texto plano completo sin etiquetas HTML (1 o 2 párrafos con buena densidad conceptual).
+6. `textoSubrayadoIdealHTML`: Una versión idéntica de `textoOrigen`, pero agregando etiquetas `<mark class="hl-span hl-[CATEGORIA]">` alrededor de las frases clave que deberían ser subrayadas en una lectura ideal.
+
+REGLAS PARA EL SUBRAYADO IDEAL (`textoSubrayadoIdealHTML`):
+Utiliza de forma selectiva y equilibrada (resaltando entre el 15% y el 25% del texto total, NUNCA todo el texto) las siguientes clases CSS según el tipo de información:
+
+- `hl-concepto` (🟣 Concepto / Definición principal)
+- `hl-dato` (🟢 Dato exacto, Fecha, Cifra o Nombre de Autor)
+- `hl-causa` (🟠 Causa, Consecuencia, Proceso o Alerta)
+- `hl-ejemplo` (🔵 Ejemplo, Caso práctico o Aplicación)
+- `hl-kw` (💖 Palabra Clave o Término técnico)
+- `hl-secundario` (🟡 Idea Secundaria, Detalle relevante o Contexto)
+
+---
+
+EJEMPLO DE ESTRUCTURA ESPERADA:
+
+const datosSubrayado = {
+    tituloPagina: "Subrayado Jerárquico Avanzado",
+    subtitulo: "Los Caudillos y el Poder Provincial (1820)",
+    asignatura: "Historia Argentina",
+    fecha: "Década de 1820",
+    
+    textoOrigen: "En la década de 1820, los gobernadores caudillos ejercieron un rol político fundamental...",
+
+    textoSubrayadoIdealHTML: `En la <mark class="hl-span hl-dato">década de 1820</mark>, los <mark class="hl-span hl-kw">gobernadores caudillos</mark> ejercieron un <mark class="hl-span hl-concepto">rol político fundamental como máxima autoridad provincial</mark>...`
+};
+
+---
+POR FAVOR, GENERA EL OBJETO `datosSubrayado` PARA EL SIGUIENTE TEXTO/TEMA:
+Los archivos que te envié

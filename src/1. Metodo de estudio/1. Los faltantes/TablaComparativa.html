@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tabla Comparativa</title>
+<style>
+    /* 1. RESET GLOBAL Y TRANSICIONES */
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        font-family: 'DM Sans', sans-serif;
+        background-color: var(--bg-body); 
+        color: var(--ink);
+        line-height: 1.6;
+        padding-bottom: 60px;
+    }
+
+    /* 2. ENCABEZADO */
+    .header-container {
+        text-align: center;
+        padding: 46px 20px 30px;
+        position: relative;
+    }
+
+    h1 {
+        font: 600 2.3em 'Playfair Display', serif;
+        letter-spacing: -0.5px;
+        margin: 0;
+        color: var(--ink);
+    }
+
+    .subtitulo {
+        font: 500 12px 'DM Mono', monospace;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        color: var(--violet);
+        margin-top: 10px;
+    }
+
+    /* 3. CONTENEDOR DE LA TABLA */
+    #contenedor {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .tabla-wrapper {
+        background: var(--bg-surface);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        box-shadow: var(--shadow-card);
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        min-width: 600px;
+    }
+
+    /* 4. ESTILOS DE CELDAS Y FILAS */
+    th, td {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+    }
+
+    tr:last-child td {
+        border-bottom: none;
+    }
+
+    th {
+        background-color: var(--bg-header);
+        color: var(--violet);
+        font: 600 16px 'Playfair Display', serif;
+        position: sticky;
+        top: 0;
+    }
+
+    th.esquina {
+        background-color: var(--bg-header);
+        color: var(--muted);
+        font: 500 11px 'DM Mono', monospace;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    td.criterio {
+        font-weight: 600;
+        color: var(--ink);
+        background-color: var(--bg-criterio);
+        width: 25%;
+    }
+
+    td.dato {
+        font-size: 14.5px;
+        color: var(--ink);
+    }
+
+    td ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+    
+    td li {
+        margin-bottom: 6px;
+    }
+    
+    td li::marker { color: var(--violet); }
+    td b { color: var(--violet); }
+
+    tbody tr:hover td {
+        background-color: var(--bg-hover);
+    }
+    
+    tbody tr:hover td.criterio {
+        background-color: var(--bg-hover-criterio);
+    }
+
+</style>
+</head>
+<body>
+
+<!-- Encabezado de la página -->
+<div class="header-container" id="header-container"></div>
+
+<!-- Contenedor principal donde se inyectará la tabla -->
+<div id="contenedor"></div>
+
+<script>
+    // ==========================================
+    // 1. CONFIGURACIÓN VISUAL (JS)
+    // ==========================================
+    const themeConfig = {
+        light: {
+            "--ink": "#303249",
+            "--muted": "#777991",
+            "--violet": "#7766c9",
+            "--line": "#e8e6f1",
+            
+            "--bg-body": "#f7f6fc",
+            "--bg-surface": "#ffffff",
+            "--bg-header": "#fbfbff",
+            "--bg-criterio": "#faf9fd",
+            "--bg-hover": "#f5f3fc",
+            "--bg-hover-criterio": "#f0eeff",
+            
+            "--shadow-card": "0 10px 25px rgba(103, 88, 183, 0.07)",
+        }
+    };
+
+    function applyTheme() {
+        const root = document.documentElement;
+        const activeVars = themeConfig.light;
+
+        for (const [cssVariable, value] of Object.entries(activeVars)) {
+            root.style.setProperty(cssVariable, value);
+        }
+    }
+
+    // Iniciar con los colores configurados
+    applyTheme();
+
+
+    // =====================================================================
+    // 2. DATOS DE LA TABLA COMPARATIVA
+    // =====================================================================
+    const datosTabla = {
+        tituloPagina: "Tabla Comparativa",
+        subtitulo: "Historia: Atenas vs. Esparta",
+        
+        entidades: ["Atenas", "Esparta"],
+        
+        filas: [
+            {
+                criterio: "Sistema Político",
+                valores: [
+                    "<b>Democracia directa</b> (participaban los ciudadanos libres). Instituciones clave: la Asamblea (Ekklesía) y el Consejo de los 500.",
+                    "<b>Oligarquía militarista</b> (Diarquía). Gobernados por dos reyes y un consejo de ancianos (Gerusía)."
+                ]
+            },
+            {
+                criterio: "Economía y Sustento",
+                valores: [
+                    "Basada en el <b>comercio marítimo</b> y la artesanía. Uso extendido de la moneda.",
+                    "Basada en la <b>agricultura</b>, trabajada casi exclusivamente por los hilotas (esclavos del Estado). Rechazaban el comercio y la moneda."
+                ]
+            },
+            {
+                criterio: "Educación (Paideia vs Agogé)",
+                valores: [
+                    "Buscaba la formación integral: filosofía, oratoria, artes, música y gimnasia. Fuerte enfoque en el desarrollo <b>intelectual</b>.",
+                    "La <i>Agogé</i> era una formación estrictamente <b>militar y de supervivencia</b> desde los 7 años. Enfoque en la disciplina y el dolor."
+                ]
+            },
+            {
+                criterio: "Rol de la Mujer",
+                valores: [
+                    "Confinadas al hogar (gineceo). <b>Sin derechos políticos</b> ni participación pública. Su rol era criar ciudadanos.",
+                    "Mayor libertad relativa. <b>Entrenaban físicamente</b> para engendrar guerreros fuertes. Administraban las propiedades mientras los hombres estaban en guerra."
+                ]
+            },
+            {
+                criterio: "Fuerza Militar Principal",
+                valores: [
+                    "Destacaban por su poderosa <b>flota naval</b> y hegemonía marítima.",
+                    "Considerado el mejor <b>ejército terrestre</b> (hoplitas) de toda Grecia."
+                ]
+            }
+        ]
+    };
+
+    // =====================================================================
+    // 3. LÓGICA DE RENDERIZADO DOM
+    // =====================================================================
+    function renderEncabezado(datos) {
+        const cont = document.getElementById('header-container');
+        
+        const h1 = document.createElement('h1');
+        h1.textContent = datos.tituloPagina;
+        cont.appendChild(h1);
+        
+        const sub = document.createElement('div');
+        sub.className = 'subtitulo';
+        sub.textContent = datos.subtitulo;
+        cont.appendChild(sub);
+        
+        document.title = datos.tituloPagina + ' — ' + datos.subtitulo;
+    }
+
+    function renderTabla(datos) {
+        const contenedor = document.getElementById('contenedor');
+        
+        const wrapper = document.createElement('div');
+        wrapper.className = 'tabla-wrapper';
+        
+        const tabla = document.createElement('table');
+        
+        const thead = document.createElement('thead');
+        const trHead = document.createElement('tr');
+        
+        const thEsquina = document.createElement('th');
+        thEsquina.className = 'esquina';
+        thEsquina.textContent = 'Criterio de comparación';
+        trHead.appendChild(thEsquina);
+        
+        datos.entidades.forEach(entidad => {
+            const th = document.createElement('th');
+            th.textContent = entidad;
+            trHead.appendChild(th);
+        });
+        
+        thead.appendChild(trHead);
+        tabla.appendChild(thead);
+        
+        const tbody = document.createElement('tbody');
+        
+        datos.filas.forEach(fila => {
+            const tr = document.createElement('tr');
+            
+            const tdCriterio = document.createElement('td');
+            tdCriterio.className = 'criterio';
+            tdCriterio.textContent = fila.criterio;
+            tr.appendChild(tdCriterio);
+            
+            fila.valores.forEach(valor => {
+                const tdDato = document.createElement('td');
+                tdDato.className = 'dato';
+                tdDato.innerHTML = valor; 
+                tr.appendChild(tdDato);
+            });
+            
+            tbody.appendChild(tr);
+        });
+        
+        tabla.appendChild(tbody);
+        wrapper.appendChild(tabla);
+        contenedor.appendChild(wrapper);
+    }
+
+    renderEncabezado(datosTabla);
+    renderTabla(datosTabla);
+
+</script>
+
+</body>
+</html>

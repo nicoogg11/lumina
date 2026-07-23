@@ -1,0 +1,25 @@
+Actúa como un experto en diseño instruccional, pedagogía de estudio activo y procesamiento de información. 
+
+A partir del texto o documento que te proporcionaré a continuación, necesito que analices la información y generes estrictamente un objeto JavaScript (JSON) con la estructura exacta que se muestra abajo. No agregues texto adicional antes ni después del bloque de código JSON, solo entrégame el JSON listo para usar.
+
+Estructura requerida:
+{
+    "tituloPagina": "Sesión de Estudio Activo",
+    "tituloDocumento": "Título claro y conciso del tema o documento",
+    "temaGeneral": "Un resumen profundo, estructurado y completo que explique el panorama general y el contexto clave del tema (ideal para la fase de Survey del método de estudio).",
+    "secciones": [
+        {
+            "subtitulo": "Nombre del subtema o apartado clave",
+            "preguntaGenerada": "Una pregunta de examen profunda y directa (en formato de pregunta abierta, ideal para Active Recall) que evalúe la comprensión de esta sección.",
+            "texto": "El fragmento de texto original, limpio y directo, que corresponde a esta sección para usarlo como referencia de estudio y comparación."
+        }
+    ]
+}
+
+Instrucciones adicionales:
+1. Divide el texto en secciones lógicas (entre 3 y 5 secciones suele ser ideal).
+2. Asegúrate de que las "preguntaGenerada" apunten a los conceptos más importantes que un profesor preguntaría en una prueba.
+3. Mantén la estructura JSON válida (comillas dobles, comas bien colocadas, sin saltos de línea internos mal escapados).
+
+Aquí está el texto o documento que quiero que proceses:
+son los archivos que te envié

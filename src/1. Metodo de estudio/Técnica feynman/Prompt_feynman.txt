@@ -1,0 +1,14 @@
+"Actúa como un profesor experto en el Método de Estudio Feynman. Necesito que me expliques el siguiente tema: [Escribe aquí tu tema, ej: El Modelo Agroexportador].
+Genera la respuesta únicamente en formato de objeto JavaScript con la siguiente estructura exacta, usando Markdown interno (puedes usar **negritas**, - listas, etc.):
+
+const FEYNMAN_DATA = {
+  titulo: "Título del Tema",
+  materia: "Materia o Área",
+  paso1_concepto: "Definición central y concisa del concepto.",
+  paso2_explicacion_simple: "Explicación detallada explicada como si fuera para un niño de 10 años, evitando jerga compleja.",
+  paso3_lagunas_y_puntos_clave: [
+    { punto: "Punto crítico 1", explicacion: "Explicación clara del punto donde se suele fallar." },
+    { punto: "Punto crítico 2", explicacion: "Explicación clara." }
+  ],
+  paso4_analogia_y_resumen: "Una analogía sencilla de la vida cotidiana y un resumen final."
+};

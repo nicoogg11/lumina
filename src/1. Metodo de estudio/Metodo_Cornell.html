@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Método Cornell</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+    :root{
+        --ink: #303249;
+        --muted: #777991;
+        --paper: #fbfbff;
+        --lilac: #eee9ff;
+        --lav: #d9ceff;
+        --mint: #d9f1e8;
+        --line: #e8e6f1;
+        --violet: #7766c9;
+        --peach: #ffdcd2;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        font-family: 'DM Sans', sans-serif;
+        background-color: #f7f6fc;
+        color: var(--ink);
+        line-height: 1.5;
+        padding-bottom: 60px;
+    }
+
+    .header-container {
+        text-align: center;
+        padding: 46px 20px 22px;
+        position: relative;
+    }
+
+    h1 {
+        font: 600 2.3em 'Playfair Display', serif;
+        letter-spacing: -0.5px;
+        margin: 0;
+        color: var(--ink);
+    }
+
+    .subtitulo {
+        font: 500 12px 'DM Mono', monospace;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        color: var(--violet);
+        margin-top: 10px;
+    }
+
+    .sticker { display: none; }
+
+    #contenedor {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+    }
+
+    .hoja {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        box-shadow: 0 10px 25px rgba(103, 88, 183, 0.07);
+        position: relative;
+        overflow: hidden;
+        transform: none !important;
+    }
+
+    .cinta { display: none; }
+
+    .fila-encabezado {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        padding: 22px 30px 18px;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .fila-encabezado .campo:last-child { text-align: right; }
+
+    .campo .etiqueta {
+        font: 500 10px 'DM Mono', monospace;
+        letter-spacing: 1.2px;
+        color: var(--muted);
+        text-transform: uppercase;
+        display: block;
+    }
+
+    .campo .valor {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ink);
+        display: block;
+        margin-top: 3px;
+    }
+
+    .cuerpo {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .columna {
+        padding: 24px 28px 26px;
+    }
+
+    .col-ideas {
+        border-right: 1px solid var(--line);
+        background: var(--paper);
+    }
+
+    .titulo-col {
+        font: 600 15px 'Playfair Display', serif;
+        color: var(--violet);
+        text-align: center;
+        margin: 0 0 16px;
+    }
+
+    .columna ul {
+        margin: 0;
+        padding-left: 20px;
+        font-size: 13.5px;
+    }
+
+    .columna li {
+        margin-bottom: 10px;
+    }
+
+    .columna li::marker { color: var(--lav); }
+
+    .col-ideas li { font-weight: 600; }
+
+    .col-notas .dato,
+    .columna b {
+        color: var(--violet);
+        font-weight: 600;
+    }
+
+    .fila-resumen {
+        border-top: 1px solid var(--line);
+        padding: 20px 30px 24px;
+    }
+
+    .titulo-resumen {
+        font: 600 15px 'Playfair Display', serif;
+        color: var(--ink);
+        text-align: center;
+        margin: 0 0 10px;
+    }
+
+    .fila-resumen ul {
+        margin: 0;
+        padding-left: 20px;
+        font-size: 13px;
+    }
+    .fila-resumen li { margin-bottom: 6px; }
+
+    @media (max-width: 640px) {
+        .fila-encabezado, .cuerpo { grid-template-columns: 1fr; }
+        .fila-encabezado .campo:last-child { text-align: left; margin-top: 10px; }
+        .col-ideas { border-right: none; border-bottom: 1px solid var(--line); }
+        h1 { font-size: 1.8em; }
+    }
+</style>
+</head>
+<body>
+
+<div class="header-container" id="header-container"></div>
+
+<div id="contenedor"></div>
+
+<script>
+    // =====================================================================
+    // ÚNICO LUGAR QUE HAY QUE EDITAR PARA CAMBIAR DE TEMA.
+    // Todo lo demás (HTML, colores por hoja, numeración, responsive) se
+    // genera solo a partir de este objeto.
+    //
+    // - tituloPagina / subtitulo: encabezado grande de arriba de todo.
+    // - asignatura / fecha: se repiten en cada hoja (podés pisarlas por
+    //   hoja individual agregando "asignatura" o "fecha" adentro de esa hoja).
+    // - stickers: emojis decorativos flotantes en el encabezado (opcional).
+    // - tintes: colores de fondo de la franja "Resumen", se van repitiendo
+    //   en ciclo (podés poner 1, 3, 10... los que quieras).
+    // - hojas: un objeto por cada hoja Cornell. "notas" e "ideasClave" son
+    //   arrays de strings (podés usar <b>...</b> para resaltar en naranja).
+    // =====================================================================
+ const datosCornell = {
+    tituloPagina: "Método Cornell",
+    subtitulo: "Los Caudillos",
+    asignatura: "Historia Argentina",
+    fecha: "Década de 1820",
+    stickers: [ 
+        { emoji: "🐎", top: "8px", left: "6%", rot: "-12deg" },
+        { emoji: "📜", top: "14px", right: "6%", rot: "10deg" }
+    ],
+    tintes: ["#FFF6E8", "#EAF6F3", "#F3EEFB"], 
+    hojas: [
+        {
+            titulo: "Origen y Perfil de los Caudillos en 1820",
+            ideasClave: [
+                "¿Quiénes eran los caudillos?",
+                "¿Cuál era su origen económico y social?",
+                "¿Qué rol militar tenían?"
+            ],
+            notas: [
+                "En la <b>década de 1820</b>, los gobernadores ejercieron un rol político fundamental, siendo la <b>máxima autoridad política</b> en el ámbito provincial.",
+                "Provenían de familias de la <b>administración colonial</b>, poseían <b>grandes extensiones de tierra</b> o inmensas <b>fortunas comerciales</b>.",
+                "Eran líderes locales <b>respetados y queridos por el pueblo</b>, con un fuerte pasado militar por haber comandado tropas en las <b>guerras de Independencia</b>."
+            ],
+            resumen: [
+                "En la década de 1820, los caudillos se consolidaron como las máximas autoridades provinciales, legitimados por su gran poder económico, prestigio militar y fuerte apoyo popular local."
+            ]
+        },
+        {
+            titulo: "Visiones Historiográficas y Vínculo con las Masas",
+            ideasClave: [
+                "¿Qué sostenía la visión tradicional?",
+                "¿Qué propone la corriente revisionista?",
+                "¿Cómo era el verdadero vínculo con el pueblo?"
+            ],
+            notas: [
+                "La <b>visión tradicional</b> sostenía que los caudillos usaban su <b>carisma personal</b> para manipular masas pasivas y empujarlas a actos cuestionables.",
+                "Historiadores actuales, como <b>Ariel de la Fuente</b>, aseguran que los seguidores <b>legitimaban activamente</b> al caudillo y no eran sujetos manipulables.",
+                "El vínculo no se basaba solo en <b>recompensas materiales o dinero</b>, sino en una profunda <b>vinculación emocional e identificación</b> con la figura del líder."
+            ],
+            resumen: [
+                "La historiografía actual rechaza la idea de las masas pasivas manipuladas y demuestra que el liderazgo caudillista se basaba en una legitimación activa y un fuerte vínculo emocional con el pueblo."
+            ]
+        },
+        {
+            titulo: "Organización Política y Marcos Institucionales",
+            ideasClave: [
+                "¿Eran líderes anárquicos y sin leyes?",
+                "¿Qué bases administrativas establecieron?",
+                "¿Qué eran las salas de representantes?"
+            ],
+            notas: [
+                "Se refutó la idea de que eran <b>personas poco instruidas y violentas</b> que impedían la organización nacional mediante gobiernos al margen de la ley.",
+                "Buscaron establecer bases administrativas dotando a sus provincias de <b>marcos legales</b> mediante la sanción de <b>constituciones o reglamentos</b> de gobierno.",
+                "Crearon instituciones como las <b>salas de representantes</b>, que actuaban como <b>poderes legislativos</b> para sancionar leyes y establecer el método de elección de gobernantes."
+            ],
+            resumen: [
+                "Lejos de ser figuras anárquicas, los caudillos impulsaron la institucionalización de sus provincias mediante la creación de constituciones, marcos legales y poderes legislativos."
+            ]
+        },
+        {
+            titulo: "Relaciones y Pactos Interprovinciales",
+            ideasClave: [
+                "¿Se aislaban en sus provincias?",
+                "¿Para qué servían los pactos interprovinciales?",
+                "Ejemplos de caudillos de la época"
+            ],
+            notas: [
+                "A pesar de concentrarse en desarrollar sus territorios, los caudillos <b>se vincularon políticamente entre sí</b> evitando el aislamiento.",
+                "Firmaron numerosos <b>acuerdos y pactos</b> destinados a fomentar la <b>cooperación interprovincial</b>, siendo esto el primer paso hacia la <b>unidad nacional</b>.",
+                "Estos pactos también servían para resolver la <b>organización de límites</b> y regular las <b>cuestiones comerciales</b>.",
+                "Ejemplos destacados de la época son <b>Bernabé Araoz</b> (gobernador de Tucumán) y <b>Estanislao López</b> (gobernador de Santa Fe)."
+            ],
+            resumen: [
+                "Los caudillos fomentaron la integración territorial firmando pactos y acuerdos de cooperación interprovincial, resolviendo conflictos limítrofes y comerciales como paso previo a la unidad nacional."
+            ]
+        }
+    ]
+};
+
+    function crearLista(items, claseLi = "") {
+        const ul = document.createElement('ul');
+        items.forEach(texto => {
+            const li = document.createElement('li');
+            if (claseLi) li.className = claseLi;
+            li.innerHTML = texto;
+            ul.appendChild(li);
+        });
+        return ul;
+    }
+
+    function renderEncabezado(datos) {
+        const cont = document.getElementById('header-container');
+        (datos.stickers || []).forEach(s => {
+            const span = document.createElement('span');
+            span.className = 'sticker';
+            span.textContent = s.emoji;
+            span.style.top = s.top || '10px';
+            if (s.left) span.style.left = s.left;
+            if (s.right) span.style.right = s.right;
+            span.style.transform = `rotate(${s.rot || '0deg'})`;
+            cont.appendChild(span);
+        });
+        const h1 = document.createElement('h1');
+        h1.textContent = datos.tituloPagina;
+        cont.appendChild(h1);
+        const sub = document.createElement('div');
+        sub.className = 'subtitulo';
+        sub.textContent = datos.subtitulo;
+        cont.appendChild(sub);
+        document.title = datos.tituloPagina + ' — ' + datos.subtitulo;
+    }
+
+    function renderHoja(hojaDatos, index, datosGenerales) {
+        const tintes = datosGenerales.tintes && datosGenerales.tintes.length
+            ? datosGenerales.tintes
+            : ['#FFF6E8'];
+        const tinte = tintes[index % tintes.length];
+
+        const hoja = document.createElement('div');
+        hoja.className = `hoja rot-${index % 3}`;
+
+        const cinta = document.createElement('div');
+        cinta.className = 'cinta';
+        hoja.appendChild(cinta);
+
+        // ---- fila encabezado (título / asignatura / fecha / hoja n°) ----
+        const filaEnc = document.createElement('div');
+        filaEnc.className = 'fila-encabezado';
+
+        const campoIzq = document.createElement('div');
+        campoIzq.className = 'campo';
+        campoIzq.innerHTML = `
+            <span class="etiqueta">Título</span>
+            <span class="valor">${hojaDatos.titulo}</span>
+            <span class="etiqueta" style="margin-top:6px;">Asignatura</span>
+            <span class="valor">${hojaDatos.asignatura || datosGenerales.asignatura || ''}</span>
+        `;
+
+        const campoDer = document.createElement('div');
+        campoDer.className = 'campo';
+        campoDer.innerHTML = `
+            <span class="etiqueta">Fecha</span>
+            <span class="valor">${hojaDatos.fecha || datosGenerales.fecha || ''}</span>
+            <span class="etiqueta" style="margin-top:6px;">Hoja N°</span>
+            <span class="valor">${index + 1}</span>
+        `;
+
+        filaEnc.appendChild(campoIzq);
+        filaEnc.appendChild(campoDer);
+        hoja.appendChild(filaEnc);
+
+        // ---- cuerpo (ideas clave | notas de la clase) ----
+        const cuerpo = document.createElement('div');
+        cuerpo.className = 'cuerpo';
+
+        const colIdeas = document.createElement('div');
+        colIdeas.className = 'columna col-ideas';
+        const tituloIdeas = document.createElement('div');
+        tituloIdeas.className = 'titulo-col';
+        tituloIdeas.textContent = 'Ideas clave';
+        colIdeas.appendChild(tituloIdeas);
+        colIdeas.appendChild(crearLista(hojaDatos.ideasClave || []));
+
+        const colNotas = document.createElement('div');
+        colNotas.className = 'columna col-notas';
+        const tituloNotas = document.createElement('div');
+        tituloNotas.className = 'titulo-col';
+        tituloNotas.textContent = 'Notas de la clase';
+        colNotas.appendChild(tituloNotas);
+        colNotas.appendChild(crearLista(hojaDatos.notas || []));
+
+        cuerpo.appendChild(colIdeas);
+        cuerpo.appendChild(colNotas);
+        hoja.appendChild(cuerpo);
+
+        // ---- resumen ----
+        const filaResumen = document.createElement('div');
+        filaResumen.className = 'fila-resumen';
+        filaResumen.style.background = tinte;
+        const tituloResumen = document.createElement('div');
+        tituloResumen.className = 'titulo-resumen';
+        tituloResumen.textContent = hojaDatos.resumenTitulo || 'Resumen';
+        filaResumen.appendChild(tituloResumen);
+        filaResumen.appendChild(crearLista(hojaDatos.resumen || []));
+        hoja.appendChild(filaResumen);
+
+        return hoja;
+    }
+
+    function renderTodo(datos) {
+        renderEncabezado(datos);
+        const contenedor = document.getElementById('contenedor');
+        datos.hojas.forEach((hojaDatos, i) => {
+            contenedor.appendChild(renderHoja(hojaDatos, i, datos));
+        });
+    }
+
+    renderTodo(datosCornell);
+</script>
+
+</body>
+</html>

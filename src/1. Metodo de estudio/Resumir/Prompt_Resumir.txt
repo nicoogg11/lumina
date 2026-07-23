@@ -1,0 +1,19 @@
+Actúa como un diseñador instruccional y docente experto en técnicas de estudio.
+
+Tu tarea es analizar el texto/apunte adjunto y convertirlo en el objeto de datos JavaScript `datosSintesis` respetando la técnica del Embudo (reducción progresiva por niveles de abstracción).
+
+REGLAS PARA CADA CAMPO DEL OBJETO:
+- `tituloPagina`: Mantener siempre el valor "Síntesis por Embudo".
+- `subtitulo`: Título corto y descriptivo del tema.
+- `asignatura`: Nombre de la materia, disciplina o tema general.
+- `fecha`: Época histórica, fecha, unidad académica o contexto del texto.
+- `textoOrigen`: El texto completo base que servirá de estudio (unificado en un solo párrafo claro).
+- `capa1Ideal`: Compresión del texto original al 50% aprox. Mantiene la coherencia pero elimina ejemplos secundarios, datos de relleno y adornos.
+- `capa2Ideal`: Un array de JavaScript con entre 3 y 5 ítems/puntos clave. Cada punto debe ser una frase ultra-corta con la idea principal de un bloque.
+- `capa3Ideal`: Una única oración contundente ("Elevator Pitch") que resuma la esencia total del tema.
+
+REQUISITO DE SALIDA:
+Devuelve ÚNICAMENTE el bloque de código JavaScript `const datosSintesis = { ... };` con la información rellenada, sin explicaciones previas ni posteriores, listo para copiar y reemplazar dentro del tag <script> del HTML.
+
+Texto/Material de estudio a procesar:
+Son los archivos que te envié

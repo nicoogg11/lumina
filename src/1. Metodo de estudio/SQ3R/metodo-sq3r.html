@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asistente de Estudio Activo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --font-sans:'Inter','DM Sans',sans-serif;
+  --font-serif:'Playfair Display',serif;
+  --font-mono:'DM Mono',monospace;
+
+  --violet:#7766c9;
+  --violet-hover:#6656b3;
+  --violet-soft-text:#8f79da;
+  --lav:#d9ceff;
+  --peach:#ffdcd2;
+
+  --bg-app:#f7f6fc;
+  --bg-sidebar:#f1effb;
+  --bg-surface:#fff;
+  --bg-surface-alt:#faf9fd;
+  --bg-soft:#eeeaff;
+  --bg-hero:#e9e5fb;
+  --bg-hover:#f5f3fc;
+  --bg-elevated:#fff;
+
+  --ink:#303249;
+  --muted:#777991;
+  --muted-2:#88869c;
+
+  --line:#e8e6f1;
+  --line-soft:#e4e1f2;
+  --line-accent:#c9bfeb;
+
+  --success:#4a8a73;
+  --success-bg:#effaf5;
+  --success-border:#cde9dd;
+  --danger:#b6666c;
+  --danger-bg:#fdeceb;
+  --danger-border:#f5d9d2;
+
+  --paper:#fbfbff;
+  --lilac:#eee9ff;
+  --mint:#d9f1e8;
+
+  --shadow-soft:0 3px 12px rgba(174,169,203,.13);
+  --shadow-card:0 9px 20px rgba(112,102,165,.09);
+  --shadow-modal:0 20px 60px rgba(39,35,62,.33);
+}
+
+* { box-sizing: border-box; transition: background-color .25s ease, border-color .25s ease; }
+body {
+    margin: 0;
+    background: var(--bg-app);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    padding: 40px 20px;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+}
+
+.sq3r-container {
+    width: 100%;
+    max-width: 900px;
+    background: var(--bg-elevated);
+    border-radius: 20px;
+    box-shadow: var(--shadow-modal);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.study-head {
+    padding: 24px 30px;
+    border-bottom: 1px solid var(--line-soft);
+    text-align: center;
+    background: var(--bg-surface);
+}
+
+.study-head h1 {
+    font: 600 28px 'Playfair Display', serif;
+    margin: 0 0 5px;
+    color: var(--ink);
+    letter-spacing: -0.5px;
+}
+.study-head .eyebrow {
+    font: 500 12px var(--font-mono);
+    letter-spacing: 1.5px;
+    color: var(--violet);
+    text-transform: uppercase;
+}
+
+.stepper {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background: var(--bg-surface-alt);
+    border-bottom: 1px solid var(--line);
+}
+
+.step {
+    padding: 16px 10px;
+    text-align: center;
+    position: relative;
+    color: var(--muted);
+    border-bottom: 3px solid transparent;
+    opacity: 0.5;
+}
+.step b { display: block; font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+.step small { font: 500 10px var(--font-mono); text-transform: uppercase; letter-spacing: 0.5px; }
+
+.step.completed { opacity: 1; color: var(--success); }
+.step.active {
+    opacity: 1;
+    color: var(--violet);
+    border-bottom-color: var(--violet);
+    background: var(--bg-surface);
+}
+
+.workspace {
+    padding: 40px;
+    flex: 1;
+    background: var(--bg-app);
+    background-image: linear-gradient(var(--line-soft) 1px, transparent 1px), linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+    background-size: 28px 28px;
+    overflow-y: auto;
+}
+
+.phase-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: var(--shadow-card);
+    display: none;
+    animation: fadeIn 0.4s ease;
+}
+.phase-card.active { display: block; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.phase-header h2 { font: 600 22px var(--font-serif); margin: 0 0 10px; color: var(--violet); }
+.phase-header p { font-size: 13.5px; color: var(--muted); margin: 0 0 24px; line-height: 1.5; }
+
+.input-group { margin-bottom: 20px; text-align: left; }
+.input-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 8px;
+    padding-left: 4px;
+}
+.todo-input {
+    width: 100%;
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    padding: 14px 16px;
+    background: var(--bg-surface-alt);
+    color: var(--ink);
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    resize: vertical;
+}
+.todo-input:focus {
+    border-color: var(--violet);
+    box-shadow: 0 0 0 3px rgba(119, 102, 201, 0.12);
+    background: var(--bg-surface);
+}
+
+textarea.todo-input { min-height: 100px; }
+
+.content-box {
+    background: var(--bg-surface-alt);
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--ink);
+}
+.content-box h3 { font: 600 16px var(--font-serif); margin: 0 0 10px; color: var(--violet); }
+
+.review-item {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+.review-header {
+    background: var(--lilac);
+    padding: 14px 20px;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--violet);
+}
+.review-body { padding: 20px; background: var(--bg-surface); }
+.review-body .resp {
+    background: var(--success-bg);
+    border-left: 3px solid var(--success);
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 14px;
+}
+.review-body .text-orig {
+    font-size: 13px;
+    color: var(--muted);
+    border-top: 1px dashed var(--line);
+    padding-top: 14px;
+}
+
+.footer-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line-soft);
+}
+
+.btn {
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+}
+.btn-primary {
+    background: var(--violet);
+    color: #fff;
+    box-shadow: 0 5px 14px rgba(119, 102, 201, 0.2);
+}
+.btn-primary:hover { background: var(--violet-hover); transform: translateY(-1px); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.btn-secondary {
+    background: var(--bg-soft);
+    color: var(--violet);
+}
+.btn-secondary:hover { background: var(--line-accent); }
+
+.prompt-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.btn-copy {
+    background: var(--violet);
+    color: #fff;
+    border: none;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-copy:hover { background: var(--violet-hover); }
+
+.prompt-box {
+    background: #232136;
+    color: #e0def4;
+    border-radius: 12px;
+    padding: 16px 20px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 200px;
+    overflow-y: auto;
+    text-align: left;
+}
+
+@media (max-width: 640px) {
+    .stepper { grid-template-columns: repeat(4, 1fr); }
+    .step b { display: none; }
+    .step small { font-size: 9px; }
+    .workspace { padding: 20px; }
+    .phase-card { padding: 20px; }
+}
+</style>
+</head>
+<body>
+
+<div class="sq3r-container">
+    <div class="study-head" id="header-container"></div>
+
+    <div class="stepper" id="stepper">
+        <div class="step active" id="tab-0"><b>Survey</b><small>Panorama General</small></div>
+        <div class="step" id="tab-1"><b>Read</b><small>Lectura</small></div>
+        <div class="step" id="tab-2"><b>Recite</b><small>Active Recall</small></div>
+        <div class="step" id="tab-3"><b>Review</b><small>Calificación</small></div>
+    </div>
+
+    <div class="workspace">
+        
+        <!-- Fase 1: Survey (Panorama General y Estructura) -->
+        <div class="phase-card active" id="phase-0">
+            <div class="phase-header">
+                <h2>1. Survey (Panorama General)</h2>
+                <p>Aquí tienes el análisis profundo del documento estructurado por la IA para que entiendas el contexto completo antes de iniciar la lectura.</p>
+            </div>
+            <div class="content-box">
+                <label style="font-size:12px; font-weight:bold; color:var(--violet); text-transform:uppercase;">Panorama General y Contexto:</label>
+                <p id="survey-tema" style="margin-top: 8px; margin-bottom: 20px; font-weight: 500; line-height: 1.6;"></p>
+                
+                <h3 style="border-top: 1px solid var(--line); padding-top: 15px;">Estructura del Contenido:</h3>
+                <ul class="survey-list" id="survey-list" style="margin: 0; padding-left: 20px; line-height: 1.6;"></ul>
+            </div>
+            <div class="footer-actions">
+                <button class="btn btn-primary" onclick="nextPhase(0)">Siguiente paso: Read</button>
+            </div>
+        </div>
+
+        <!-- Fase 2: Read -->
+        <div class="phase-card" id="phase-1">
+            <div class="phase-header">
+                <h2>2. Read (Lectura Guiada por Preguntas)</h2>
+                <p>Lee el texto de cada sección teniendo en mente la pregunta de examen asociada. Esto guiará tu atención hacia lo verdaderamente importante.</p>
+            </div>
+            <div id="read-container"></div>
+            <div class="footer-actions">
+                <button class="btn btn-primary" onclick="nextPhase(1)">Siguiente paso: Recite</button>
+            </div>
+        </div>
+
+        <!-- Fase 3: Recite -->
+        <div class="phase-card" id="phase-2">
+            <div class="phase-header">
+                <h2>3. Recite (Active Recall y Explicación)</h2>
+                <p>Ocultamos el texto. Aplica <b>Active Recall</b>: responde las preguntas explicándolo como si se lo enseñaras a alguien que no sabe nada del tema (paso 4 y 5 de tu método).</p>
+            </div>
+            <div id="recite-container"></div>
+            <div class="footer-actions">
+                <button class="btn btn-primary" id="btn-next-2" onclick="nextPhase(2)">Ver Calificación y Repaso</button>
+            </div>
+        </div>
+
+        <!-- Fase 4: Review y Calificación con IA -->
+        <div class="phase-card" id="phase-3">
+            <div class="phase-header">
+                <h2>5. Review (Calificación y Feedback de la IA)</h2>
+                <p>Copia el bloque de texto generado abajo y pídeselo a la IA. Ella evaluará tus respuestas de memoria frente al texto original y te dará una calificación detallada.</p>
+            </div>
+            <div id="review-container"></div>
+            
+            <div class="content-box" style="margin-top: 25px; border: 2px dashed var(--violet);">
+                <div class="prompt-header-row">
+                    <h3 style="margin: 0;">🤖 Consigna para calificar con la IA:</h3>
+                    <button class="btn-copy" id="btn-copy-prompt" onclick="copiarPrompt()">📋 Copiar Prompt</button>
+                </div>
+                <p style="font-size: 13px; color: var(--muted); margin: 8px 0 12px 0;">Copia este resumen de tus respuestas y pégaselo en el chat a la IA para recibir tu nota, correcciones y puntos de mejora:</p>
+                <div class="prompt-box" id="ai-prompt-eval"></div>
+            </div>
+
+            <div class="footer-actions">
+                <button class="btn btn-secondary" onclick="window.print()">Guardar como PDF / Imprimir</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // =====================================================================
+    // La IA reemplazará este objeto JSON con el contenido analizado.
+    // =====================================================================
+    const datosSQ3R = {
+        tituloPagina: "Sesión de Estudio Activo",
+        tituloDocumento: "La Economía Cafetera en el Siglo XIX",
+        temaGeneral: "Este documento detalla de forma exhaustiva cómo la introducción y el auge del cultivo extensivo del café transformaron por completo las bases económicas, reconfiguraron las clases sociales rurales y aceleraron la modernización de infraestructuras (como puertos y ferrocarriles) en América Latina durante la segunda mitad del siglo XIX.",
+        secciones: [
+            {
+                subtitulo: "El surgimiento de la economía cafetera",
+                preguntaGenerada: "¿Qué factores principales impulsaron el cultivo extensivo de café en América Latina durante la segunda mitad del siglo XIX?",
+                texto: "Durante la segunda mitad del siglo XIX, el café se consolidó como el principal producto de exportación en diversas regiones de América Latina. Las condiciones climáticas favorables y la creciente demanda europea impulsaron el cultivo extensivo."
+            },
+            {
+                subtitulo: "Cambios en la estructura social",
+                preguntaGenerada: "¿Cómo modificó el auge cafetero la demografía rural y las clases sociales de la época?",
+                texto: "El auge cafetero generó el surgimiento de una nueva élite de terratenientes y comerciantes exportadores. Al mismo tiempo, miles de campesinos migraron hacia las zonas cafeteras buscando empleo como jornaleros, modificando drásticamente la demografía rural."
+            },
+            {
+                subtitulo: "Infraestructura y transporte",
+                preguntaGenerada: "¿Qué tipo de inversiones en infraestructura se realizaron para facilitar la exportación del café y cuál fue su impacto?",
+                texto: "Para facilitar la exportación del grano, se invirtieron grandes capitales en el desarrollo de infraestructuras. Se construyeron ferrocarriles y se modernizaron los puertos, conectando las regiones productoras aisladas con el mercado internacional."
+            }
+        ]
+    };
+
+    let respuestasUsuario = [];
+
+    function initSQ3R() {
+        const header = document.getElementById('header-container');
+        header.innerHTML = `
+            <div class="eyebrow">${datosSQ3R.tituloPagina}</div>
+            <h1>${datosSQ3R.tituloDocumento}</h1>
+        `;
+
+        // Fase 1: Survey
+        document.getElementById('survey-tema').innerText = datosSQ3R.temaGeneral;
+        const surveyList = document.getElementById('survey-list');
+        surveyList.innerHTML = datosSQ3R.secciones.map(sec => `<li><b>${sec.subtitulo}</b></li>`).join('');
+    }
+
+    function setupPhase2Validation() {
+        const inputs = document.querySelectorAll('.input-respuesta');
+        const btnNext = document.getElementById('btn-next-2');
+        btnNext.disabled = true;
+        
+        const checkValidation = () => {
+            let valid = true;
+            respuestasUsuario = [];
+            inputs.forEach(inp => {
+                if(inp.value.trim().length === 0) valid = false;
+                respuestasUsuario.push(inp.value.trim());
+            });
+            btnNext.disabled = !valid;
+        };
+
+        inputs.forEach(inp => inp.addEventListener('input', checkValidation));
+    }
+
+    function nextPhase(currentPhase) {
+        document.getElementById(`phase-${currentPhase}`).classList.remove('active');
+        document.getElementById(`tab-${currentPhase}`).classList.remove('active');
+        document.getElementById(`tab-${currentPhase}`).classList.add('completed');
+
+        const next = currentPhase + 1;
+        document.getElementById(`phase-${next}`).classList.add('active');
+        document.getElementById(`tab-${next}`).classList.add('active');
+
+        if (next === 1) { // Read (Lectura con Preguntas integradas)
+            const container = document.getElementById('read-container');
+            container.innerHTML = datosSQ3R.secciones.map((sec, i) => `
+                <div class="content-box">
+                    <span style="font-size:11px; font-weight:700; color:var(--violet); text-transform:uppercase; display:block; margin-bottom:4px;">Sección: ${sec.subtitulo}</span>
+                    <h3 style="margin-bottom: 10px;">🎯 Pregunta clave: ¿${sec.preguntaGenerada.replace(/^\¿+/, '')}</h3>
+                    <p style="margin: 0;">${sec.texto}</p>
+                </div>
+            `).join('');
+        }
+        else if (next === 2) { // Recite (Active Recall)
+            const container = document.getElementById('recite-container');
+            container.innerHTML = datosSQ3R.secciones.map((sec, i) => `
+                <div class="input-group">
+                    <label>Pregunta: ¿${sec.preguntaGenerada.replace(/^\¿+/, '')}</label>
+                    <textarea class="todo-input input-respuesta" placeholder="Explícalo como si se lo enseñaras a alguien que no sabe del tema. No importa si te falta algo..."></textarea>
+                </div>
+            `).join('');
+            setupPhase2Validation();
+        }
+        else if (next === 3) { // Review y Generación de Prompt para Calificación
+            const container = document.getElementById('review-container');
+            container.innerHTML = datosSQ3R.secciones.map((sec, i) => `
+                <div class="review-item">
+                    <div class="review-header">¿${sec.preguntaGenerada.replace(/^\¿+/, '')}</div>
+                    <div class="review-body">
+                        <div class="resp"><b>Tu explicación:</b><br>${respuestasUsuario[i]}</div>
+                        <div class="text-orig"><b>Texto de referencia original:</b><br>${sec.texto}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Construir el bloque de texto automático que el usuario copia para que la IA lo califique
+            let promptEvalText = `🤖 Consigna para calificar con la IA:\nCopia este resumen de tus respuestas y pégaselo en el chat a la IA para recibir tu nota, correcciones y puntos de mejora:\nActúa como un profesor riguroso y evalúa mi sesión de Active Recall para el documento "${datosSQ3R.tituloDocumento}".\n\nAquí tienes las preguntas, el texto de referencia original y lo que yo respondí de memoria:\n`;
+            
+            datosSQ3R.secciones.forEach((sec, i) => {
+                promptEvalText += `\n--- PREGUNTA ${i+1}: ¿${sec.preguntaGenerada} ---\n`;
+                promptEvalText += `TEXTO ORIGINAL: ${sec.texto}\n`;
+                promptEvalText += `MI RESPUESTA DE MEMORIA: ${respuestasUsuario[i]}\n`;
+            });
+
+            promptEvalText += `\nPor favor, asígname una calificación del 1 al 10, indícame qué conceptos me faltaron, cuáles son mis aciertos y dame retroalimentación constructiva para mejorar en la prueba.`;
+
+            document.getElementById('ai-prompt-eval').innerText = promptEvalText;
+        }
+    }
+
+    function copiarPrompt() {
+        const textoPrompt = document.getElementById('ai-prompt-eval').innerText;
+        navigator.clipboard.writeText(textoPrompt).then(() => {
+            const btn = document.getElementById('btn-copy-prompt');
+            btn.innerText = "¡Copiado! ✓";
+            btn.style.background = "var(--success)";
+            setTimeout(() => {
+                btn.innerText = "📋 Copiar Prompt";
+                btn.style.background = "var(--violet)";
+            }, 2000);
+        }).catch(err => {
+            alert("Error al copiar al portapapeles");
+        });
+    }
+
+    initSQ3R();
+</script>
+
+</body>
+</html>

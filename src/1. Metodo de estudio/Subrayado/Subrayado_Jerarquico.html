@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Subrayado Jerárquico Avanzado</title>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&display=swap');
+
+    :root {
+        --ink: #303249;
+        --muted: #777991;
+        --paper: #fbfbff;
+        --line: #e8e6f1;
+        --line-soft: #eceaf3;
+        --line-accent: #c6bbf8;
+        --bg-app: #f7f6fc;
+        --bg-surface: #ffffff;
+        --bg-surface-alt: #fcfbfe;
+        --bg-soft: #f1edfe;
+        --shadow-card: 0 4px 20px rgba(48, 50, 73, 0.05);
+
+        /* Marcadores Ampliados (6 colores) */
+        --hl-concepto: #7766c9;
+        --hl-concepto-bg: #eae6fd;
+        --hl-concepto-border: #c6bbf8;
+
+        --hl-dato: #2e7d32;
+        --hl-dato-bg: #e8f5e9;
+        --hl-dato-border: #a5d6a7;
+
+        --hl-causa: #d84315;
+        --hl-causa-bg: #fbe9e7;
+        --hl-causa-border: #ffab91;
+
+        --hl-ejemplo: #0277bd;
+        --hl-ejemplo-bg: #e1f5fe;
+        --hl-ejemplo-border: #81d4fa;
+
+        --hl-kw: #c2185b;
+        --hl-kw-bg: #fce4ec;
+        --hl-kw-border: #f8bbd0;
+
+        --hl-secundario: #f57f17;
+        --hl-secundario-bg: #fffde7;
+        --hl-secundario-border: #fff59d;
+
+        --success: #2e7d32;
+        --success-bg: #edf7ed;
+        --success-border: #c8e6c9;
+        --danger: #c62828;
+        --danger-bg: #ffebee;
+        --danger-border: #ffcdd2;
+        --warning: #e65100;
+        --warning-bg: #fff3e0;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background-color: var(--bg-app);
+        color: var(--ink);
+        line-height: 1.5;
+        padding-bottom: 60px;
+    }
+
+    .cn-header {
+        text-align: center;
+        padding: 42px 20px 22px;
+    }
+
+    .cn-header h2 {
+        font: 700 2.2em 'Playfair Display', serif;
+        letter-spacing: -0.5px;
+        margin: 0;
+        color: var(--ink);
+    }
+
+    .cn-sub {
+        font: 500 12.5px 'DM Mono', monospace;
+        color: var(--muted);
+        margin-top: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .app-layout {
+        max-width: 1150px;
+        margin: 0 auto;
+        padding: 0 20px;
+        display: grid;
+        grid-template-columns: 1.25fr 0.75fr;
+        gap: 22px;
+        align-items: start;
+    }
+
+    .card {
+        background: var(--bg-surface);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: var(--shadow-card);
+        position: relative;
+    }
+
+    .toolbar-header { margin-bottom: 12px; }
+    .toolbar-title {
+        font: 600 11.5px 'DM Mono', monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--muted);
+        margin-bottom: 4px;
+    }
+    .toolbar-instruction {
+        font-size: 12.5px;
+        color: var(--ink);
+        margin: 0 0 14px;
+    }
+
+    /* Paleta de Marcadores Ampliada */
+    .highlighter-palette {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 8px;
+        margin-bottom: 18px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--line-soft);
+    }
+
+    .hl-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 10px;
+        border-radius: 8px;
+        border: 1.5px solid transparent;
+        font-size: 11.5px;
+        font-weight: 600;
+        cursor: pointer;
+        background: var(--bg-surface-alt);
+        color: var(--ink);
+        transition: all 0.2s ease;
+    }
+    .hl-btn:hover { transform: translateY(-1px); }
+    .hl-btn.active { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+    .hl-btn[data-color="concepto"] { border-color: var(--hl-concepto-border); }
+    .hl-btn[data-color="concepto"].active { background: var(--hl-concepto-bg); color: var(--hl-concepto); }
+
+    .hl-btn[data-color="dato"] { border-color: var(--hl-dato-border); }
+    .hl-btn[data-color="dato"].active { background: var(--hl-dato-bg); color: var(--hl-dato); }
+
+    .hl-btn[data-color="causa"] { border-color: var(--hl-causa-border); }
+    .hl-btn[data-color="causa"].active { background: var(--hl-causa-bg); color: var(--hl-causa); }
+
+    .hl-btn[data-color="ejemplo"] { border-color: var(--hl-ejemplo-border); }
+    .hl-btn[data-color="ejemplo"].active { background: var(--hl-ejemplo-bg); color: var(--hl-ejemplo); }
+
+    .hl-btn[data-color="kw"] { border-color: var(--hl-kw-border); }
+    .hl-btn[data-color="kw"].active { background: var(--hl-kw-bg); color: var(--hl-kw); }
+
+    .hl-btn[data-color="secundario"] { border-color: var(--hl-secundario-border); }
+    .hl-btn[data-color="secundario"].active { background: var(--hl-secundario-bg); color: var(--hl-secundario); }
+
+    .btn-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .dot-concepto { background: var(--hl-concepto); }
+    .dot-dato { background: var(--hl-dato); }
+    .dot-causa { background: var(--hl-causa); }
+    .dot-ejemplo { background: var(--hl-ejemplo); }
+    .dot-kw { background: var(--hl-kw); }
+    .dot-secundario { background: var(--hl-secundario); }
+
+    /* Visor de Texto */
+    .text-viewer-container { position: relative; }
+    .text-viewer {
+        background: var(--paper);
+        border: 1px solid var(--line-soft);
+        border-radius: 14px;
+        padding: 22px;
+        font-size: 14.5px;
+        line-height: 1.85;
+        color: var(--ink);
+        user-select: text;
+        min-height: 320px;
+    }
+
+    /* Popup flotante */
+    .selection-popup {
+        position: absolute;
+        display: none;
+        background: var(--bg-surface);
+        border: 1px solid var(--line-accent);
+        border-radius: 10px;
+        padding: 6px 8px;
+        box-shadow: 0 8px 24px rgba(48, 50, 73, 0.15);
+        z-index: 100;
+        gap: 4px;
+        align-items: center;
+        flex-wrap: wrap;
+        max-width: 320px;
+        transform: translateY(-100%) translateY(-10px);
+    }
+    .selection-popup.visible { display: flex; }
+
+    .pop-btn {
+        border: none;
+        padding: 4px 8px;
+        border-radius: 5px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .pop-concepto { background: var(--hl-concepto-bg); color: var(--hl-concepto); }
+    .pop-dato { background: var(--hl-dato-bg); color: var(--hl-dato); }
+    .pop-causa { background: var(--hl-causa-bg); color: var(--hl-causa); }
+    .pop-ejemplo { background: var(--hl-ejemplo-bg); color: var(--hl-ejemplo); }
+    .pop-kw { background: var(--hl-kw-bg); color: var(--hl-kw); }
+    .pop-secundario { background: var(--hl-secundario-bg); color: #7f6000; }
+
+    /* Clases de resaltado */
+    mark.hl-span { padding: 2px 4px; border-radius: 4px; cursor: pointer; }
+    mark.hl-concepto { background-color: var(--hl-concepto-bg); color: #2a1f63; border-bottom: 2px solid var(--hl-concepto); }
+    mark.hl-dato { background-color: var(--hl-dato-bg); color: #1b471e; border-bottom: 2px solid var(--hl-dato); }
+    mark.hl-causa { background-color: var(--hl-causa-bg); color: #5c1b08; border-bottom: 2px solid var(--hl-causa); }
+    mark.hl-ejemplo { background-color: var(--hl-ejemplo-bg); color: #014368; border-bottom: 2px solid var(--hl-ejemplo); }
+    mark.hl-kw { background-color: var(--hl-kw-bg); color: #610c2b; border-bottom: 2px solid var(--hl-kw); }
+    mark.hl-secundario { background-color: var(--hl-secundario-bg); color: #574100; border-bottom: 2px solid var(--hl-secundario); }
+
+    /* Panel Lateral */
+    .summary-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .summary-header h3 { font: 600 18px 'Playfair Display', serif; margin: 0; }
+    .ratio-badge { font: 600 11px 'DM Mono', monospace; padding: 4px 10px; border-radius: 12px; background: var(--bg-soft); color: var(--muted); }
+
+    .category-group { margin-bottom: 14px; }
+    .category-title {
+        font: 600 10.5px 'DM Mono', monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 5px 8px;
+        border-radius: 6px;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .cat-concepto { background: var(--hl-concepto-bg); color: var(--hl-concepto); }
+    .cat-dato { background: var(--hl-dato-bg); color: var(--hl-dato); }
+    .cat-causa { background: var(--hl-causa-bg); color: var(--hl-causa); }
+    .cat-ejemplo { background: var(--hl-ejemplo-bg); color: var(--hl-ejemplo); }
+    .cat-kw { background: var(--hl-kw-bg); color: var(--hl-kw); }
+    .cat-secundario { background: var(--hl-secundario-bg); color: #7f6000; }
+
+    .extracted-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+    .extracted-item {
+        font-size: 11.5px;
+        padding: 6px 8px;
+        background: var(--bg-surface-alt);
+        border: 1px solid var(--line-soft);
+        border-radius: 6px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 6px;
+    }
+    .extracted-item .del-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 0; }
+    .extracted-item .del-btn:hover { color: var(--danger); }
+    .empty-msg { font-size: 11px; color: var(--muted); font-style: italic; padding: 2px 4px; }
+
+    /* Evaluación y Prompt */
+    .eval-section { max-width: 1150px; margin: 22px auto 0; padding: 0 20px; }
+    .action-bar { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+    .btn-validar {
+        background: var(--hl-concepto);
+        color: #ffffff;
+        border: none;
+        padding: 12px 22px;
+        border-radius: 10px;
+        font-size: 13.5px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 14px rgba(119, 102, 201, 0.25);
+    }
+    .btn-validar:hover { background: #6250a8; }
+
+    .feedback-box {
+        display: none;
+        padding: 16px;
+        border-radius: 12px;
+        margin-bottom: 18px;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+    .feedback-box.visible { display: block; }
+    .feedback-box.ok { background: var(--success-bg); border: 1px solid var(--success-border); color: var(--success); }
+    .feedback-box.warn { background: var(--warning-bg); border: 1px solid #ffe0b2; color: var(--warning); }
+    .feedback-box.error { background: var(--danger-bg); border: 1px solid var(--danger-border); color: var(--danger); }
+
+    .ideal-comparison {
+        margin-top: 14px;
+        padding: 16px;
+        background: #ffffff;
+        border: 1px solid var(--line-accent);
+        border-radius: 12px;
+    }
+    .ideal-comparison h4 { margin: 0 0 10px; font-family: 'Playfair Display', serif; color: var(--ink); }
+
+    .prompt-box-wrapper {
+        background: var(--bg-soft);
+        border: 1px dashed var(--hl-concepto-border);
+        border-radius: 16px;
+        padding: 22px;
+    }
+    .prompt-textarea {
+        width: 100%;
+        height: 160px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #ffffff;
+        color: var(--ink);
+        padding: 12px;
+        font-family: 'DM Mono', monospace;
+        font-size: 11.5px;
+        line-height: 1.5;
+        resize: vertical;
+        outline: none;
+    }
+    .copy-btn {
+        background: var(--bg-surface);
+        color: var(--ink);
+        border: 1px solid var(--line-accent);
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .copy-btn:hover { background: var(--hl-concepto-bg); color: var(--hl-concepto); }
+
+    @media (max-width: 850px) { .app-layout { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="cn-header" id="header-container"></div>
+
+<div class="app-layout">
+
+    <div class="card">
+        <div class="toolbar-header">
+            <div class="toolbar-title">Marcadores Jerárquicos</div>
+            <p class="toolbar-instruction">
+                Selecciona una frase con el mouse y asignale un color, o selecciona el marcador primero para activar el resaltador.
+            </p>
+        </div>
+        
+        <div class="highlighter-palette">
+            <button class="hl-btn active" data-color="concepto" onclick="seleccionarOMarcar('concepto')">
+                <span class="btn-dot dot-concepto"></span> 🟣 Concepto / Definición
+            </button>
+            <button class="hl-btn" data-color="dato" onclick="seleccionarOMarcar('dato')">
+                <span class="btn-dot dot-dato"></span> 🟢 Dato / Fecha / Autor
+            </button>
+            <button class="hl-btn" data-color="causa" onclick="seleccionarOMarcar('causa')">
+                <span class="btn-dot dot-causa"></span> 🟠 Causa / Consecuencia
+            </button>
+            <button class="hl-btn" data-color="ejemplo" onclick="seleccionarOMarcar('ejemplo')">
+                <span class="btn-dot dot-ejemplo"></span> 🔵 Ejemplo / Aplicación
+            </button>
+            <button class="hl-btn" data-color="kw" onclick="seleccionarOMarcar('kw')">
+                <span class="btn-dot dot-kw"></span> 💖 Palabra Clave
+            </button>
+            <button class="hl-btn" data-color="secundario" onclick="seleccionarOMarcar('secundario')">
+                <span class="btn-dot dot-secundario"></span> 🟡 Detalle / Idea Sec.
+            </button>
+        </div>
+
+        <div class="text-viewer-container">
+            <div id="selection-popup" class="selection-popup">
+                <button class="pop-btn pop-concepto" onclick="aplicarSubrayadoConColor('concepto')">🟣 Concepto</button>
+                <button class="pop-btn pop-dato" onclick="aplicarSubrayadoConColor('dato')">🟢 Dato/Fecha</button>
+                <button class="pop-btn pop-causa" onclick="aplicarSubrayadoConColor('causa')">🟠 Causa/Efecto</button>
+                <button class="pop-btn pop-ejemplo" onclick="aplicarSubrayadoConColor('ejemplo')">🔵 Ejemplo</button>
+                <button class="pop-btn pop-kw" onclick="aplicarSubrayadoConColor('kw')">💖 Pal. Clave</button>
+                <button class="pop-btn pop-secundario" onclick="aplicarSubrayadoConColor('secundario')">🟡 Detalle</button>
+            </div>
+
+            <div class="text-viewer" id="texto-interactivo"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="summary-header">
+            <h3>Extracción Lateral</h3>
+            <span class="ratio-badge" id="subrayado-ratio">0% subrayado</span>
+        </div>
+
+        <div id="categorias-resumen-container"></div>
+    </div>
+
+</div>
+
+<div class="eval-section">
+    <div class="card prompt-box-wrapper">
+        <h3 style="font-family:'Playfair Display', serif; margin: 0 0 6px;">Validación e Identificación de Criterio Ideal</h3>
+        <p style="font-size: 12.5px; color: var(--muted); margin: 0 0 16px;">
+            Haz clic en <b>"Validar mi Subrayado"</b> para generar un análisis comparativo entre tu selección y el modelo de subrayado ideal recomendado.
+        </p>
+
+        <div class="action-bar">
+            <button class="btn-validar" onclick="validarYGenerarEvaluacion()">
+                🔍 Validar mi Subrayado
+            </button>
+            <button class="copy-btn" id="btn-copiar-prompt" onclick="copiarPromptIA()">
+                📋 Copiar Prompt para la IA
+            </button>
+        </div>
+
+        <div id="feedback-box" class="feedback-box"></div>
+
+        <textarea id="prompt-ia-display" class="prompt-textarea" readonly placeholder="Presiona 'Validar mi Subrayado' para generar la comparación y el prompt..."></textarea>
+    </div>
+</div>
+
+<script>
+    // DATOS DE ENTRADA CON SUBRAYADO IDEAL SUGERIDO
+    const datosSubrayado = {
+        tituloPagina: "Subrayado Jerárquico Avanzado",
+        subtitulo: "Los Caudillos y el Poder Provincial (1820)",
+        asignatura: "Historia Argentina",
+        fecha: "Década de 1820",
+        
+        textoOrigen: "En la década de 1820, los gobernadores caudillos ejercieron un rol político fundamental como máxima autoridad provincial. Provenían de familias con fortunas coloniales o comerciales, poseían tierras y contaban con prestigio militar tras las guerras de Independencia. Aunque la visión tradicional los catalogaba como líderes demagógicos que manipulaban a masas pasivas, historiadores actuales como Ariel de la Fuente demuestran que existía un vínculo de legitimación activa y emotiva con el pueblo. Además, lejos de ser anárquicos, dotaron a sus provincias de constituciones, reglamentos e instituciones como las Salas de Representantes. Asimismo, firmaron acuerdos e importantes pactos interprovinciales para resolver límites, fomentar el comercio y cimentar las bases de la futura unidad nacional.",
+
+        // Versión con la propuesta ideal de subrayado
+        textoSubrayadoIdealHTML: `En la <mark class="hl-span hl-dato">década de 1820</mark>, los <mark class="hl-span hl-kw">gobernadores caudillos</mark> ejercieron un <mark class="hl-span hl-concepto">rol político fundamental como máxima autoridad provincial</mark>. Provenían de familias con fortunas coloniales o comerciales, poseían tierras y contaban con <mark class="hl-span hl-secundario">prestigio militar tras las guerras de Independencia</mark>. Aunque la visión tradicional los catalogaba como líderes demagógicos que manipulaban a masas pasivas, historiadores actuales como <mark class="hl-span hl-dato">Ariel de la Fuente</mark> demuestran que <mark class="hl-span hl-concepto">existía un vínculo de legitimación activa y emotiva con el pueblo</mark>. Además, lejos de ser anárquicos, <mark class="hl-span hl-causa">dotaron a sus provincias de constituciones, reglamentos e instituciones</mark> como las <mark class="hl-span hl-ejemplo">Salas de Representantes</mark>. Asimismo, firmaron acuerdos e importantes <mark class="hl-span hl-causa">pactos interprovinciales para resolver límites, fomentar el comercio y cimentar las bases de la futura unidad nacional</mark>.`
+    };
+
+    const CATEGORIAS = [
+        { id: 'concepto', nombre: '🟣 Conceptos / Definiciones' },
+        { id: 'dato', nombre: '🟢 Datos / Fechas / Autores' },
+        { id: 'causa', nombre: '🟠 Causas / Consecuencias / Procesos' },
+        { id: 'ejemplo', nombre: '🔵 Ejemplos / Aplicaciones' },
+        { id: 'kw', nombre: '💖 Palabras Clave / Términos' },
+        { id: 'secundario', nombre: '🟡 Detalles / Ideas Secundarias' }
+    ];
+
+    let colorActivo = 'concepto';
+    let ultimaSeleccionRange = null;
+
+    function contarPalabras(str) { return str.trim() === '' ? 0 : str.trim().split(/\s+/).length; }
+
+    function seleccionarOMarcar(color) {
+        setHighlighterColor(color);
+        const selection = window.getSelection();
+        if (selection && !selection.isCollapsed) {
+            aplicarSubrayadoConColor(color);
+        }
+    }
+
+    function setHighlighterColor(color) {
+        colorActivo = color;
+        document.querySelectorAll('.hl-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.color === color);
+        });
+    }
+
+    function initLayout() {
+        const header = document.getElementById('header-container');
+        header.innerHTML = `
+            <h2>${datosSubrayado.tituloPagina}</h2>
+            <div class="cn-sub">${datosSubrayado.subtitulo} — ${datosSubrayado.asignatura} (${datosSubrayado.fecha})</div>
+        `;
+
+        document.getElementById('texto-interactivo').innerText = datosSubrayado.textoOrigen;
+
+        // Renderizar lista lateral de categorías
+        const catContainer = document.getElementById('categorias-resumen-container');
+        catContainer.innerHTML = CATEGORIAS.map(cat => `
+            <div class="category-group">
+                <div class="category-title cat-${cat.id}">
+                    <span>${cat.nombre}</span>
+                    <span id="count-${cat.id}">0</span>
+                </div>
+                <ul class="extracted-list" id="list-${cat.id}">
+                    <li class="empty-msg">Sin selecciones.</li>
+                </ul>
+            </div>
+        `).join('');
+
+        const viewer = document.getElementById('texto-interactivo');
+        document.addEventListener('selectionchange', manejarSeleccionTexto);
+        viewer.addEventListener('mouseup', manejarFinSeleccion);
+
+        viewer.addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('hl-span')) {
+                desarmarSubrayado(e.target);
+                ocultarPopup();
+            }
+        });
+
+        actualizarPanelResumen();
+    }
+
+    function manejarSeleccionTexto() {
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed) return;
+
+        const range = selection.getRangeAt(0);
+        const container = document.getElementById('texto-interactivo');
+        if (!container.contains(range.commonAncestorContainer)) {
+            ocultarPopup();
+            return;
+        }
+
+        ultimaSeleccionRange = range.cloneRange();
+    }
+
+    function manejarFinSeleccion() {
+        const selection = window.getSelection();
+        const popup = document.getElementById('selection-popup');
+
+        if (selection && !selection.isCollapsed && ultimaSeleccionRange) {
+            const rect = ultimaSeleccionRange.getBoundingClientRect();
+            const containerRect = document.getElementById('texto-interactivo').getBoundingClientRect();
+
+            popup.style.top = (rect.top - containerRect.top) + 'px';
+            popup.style.left = Math.max(0, (rect.left - containerRect.left)) + 'px';
+            popup.classList.add('visible');
+        } else {
+            ocultarPopup();
+        }
+    }
+
+    function ocultarPopup() {
+        document.getElementById('selection-popup').classList.remove('visible');
+    }
+
+    function aplicarSubrayadoConColor(color) {
+        setHighlighterColor(color);
+        const selection = window.getSelection();
+        let range = (selection && !selection.isCollapsed) ? selection.getRangeAt(0) : ultimaSeleccionRange;
+
+        if (!range) return;
+        const selectedText = range.toString().trim();
+        if (!selectedText) return;
+
+        const container = document.getElementById('texto-interactivo');
+        if (!container.contains(range.commonAncestorContainer)) return;
+
+        const mark = document.createElement('mark');
+        mark.className = `hl-span hl-${color}`;
+        mark.dataset.color = color;
+        mark.dataset.id = 'hl-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4);
+
+        try {
+            range.surroundContents(mark);
+        } catch (e) {
+            const contents = range.extractContents();
+            mark.appendChild(contents);
+            range.insertNode(mark);
+        }
+
+        window.getSelection().removeAllRanges();
+        ultimaSeleccionRange = null;
+        ocultarPopup();
+        actualizarPanelResumen();
+    }
+
+    function desarmarSubrayado(markElem) {
+        const parent = markElem.parentNode;
+        while (markElem.firstChild) parent.insertBefore(markElem.firstChild, markElem);
+        parent.removeChild(markElem);
+        actualizarPanelResumen();
+    }
+
+    function obtenerDatosExtraidos() {
+        const marks = document.querySelectorAll('#texto-interactivo mark.hl-span');
+        const extraidos = {};
+        CATEGORIAS.forEach(cat => extraidos[cat.id] = []);
+        
+        let palabrasSubrayadas = 0;
+
+        marks.forEach(m => {
+            const txt = m.innerText.trim();
+            const col = m.dataset.color;
+            if (txt && extraidos[col]) {
+                extraidos[col].push({ id: m.dataset.id, texto: txt, elem: m });
+                palabrasSubrayadas += contarPalabras(txt);
+            }
+        });
+
+        const palabrasTotales = contarPalabras(datosSubrayado.textoOrigen);
+        const ratio = palabrasTotales > 0 ? Math.round((palabrasSubrayadas / palabrasTotales) * 100) : 0;
+
+        return { extraidos, ratio };
+    }
+
+    function actualizarPanelResumen() {
+        const { extraidos, ratio } = obtenerDatosExtraidos();
+
+        CATEGORIAS.forEach(cat => {
+            renderListaCategoria(cat.id, extraidos[cat.id]);
+        });
+
+        const ratioBadge = document.getElementById('subrayado-ratio');
+        ratioBadge.innerText = `${ratio}% subrayado`;
+        ratioBadge.style.background = ratio > 30 ? 'var(--danger-bg)' : 'var(--bg-soft)';
+        ratioBadge.style.color = ratio > 30 ? 'var(--danger)' : 'var(--muted)';
+    }
+
+    function renderListaCategoria(catKey, items) {
+        const ul = document.getElementById(`list-${catKey}`);
+        const countSpan = document.getElementById(`count-${catKey}`);
+        
+        countSpan.innerText = items.length;
+        ul.innerHTML = '';
+
+        if (items.length === 0) {
+            ul.innerHTML = `<li class="empty-msg">Sin selecciones.</li>`;
+            return;
+        }
+
+        items.forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'extracted-item';
+            li.innerHTML = `
+                <span>"${item.texto}"</span>
+                <button class="del-btn" title="Eliminar">×</button>
+            `;
+            li.querySelector('.del-btn').onclick = () => desarmarSubrayado(item.elem);
+            ul.appendChild(li);
+        });
+    }
+
+    function validarYGenerarEvaluacion() {
+        const { extraidos, ratio } = obtenerDatosExtraidos();
+        const feedbackBox = document.getElementById('feedback-box');
+        feedbackBox.classList.add('visible');
+
+        const totalItems = Object.values(extraidos).reduce((acc, curr) => acc + curr.length, 0);
+
+        let diagnosticoHTML = '';
+        if (totalItems === 0) {
+            feedbackBox.className = 'feedback-box error';
+            diagnosticoHTML = '⚠️ <b>Aviso:</b> Aún no has subrayado el texto. Selecciona frases e inténtalo de nuevo.';
+        } else {
+            feedbackBox.className = 'feedback-box ok';
+            diagnosticoHTML = `
+                <b>Análisis de Cobertura (${ratio}% del texto resaltado):</b><br>
+                A continuación puedes comparar tus selecciones con la <b>propuesta de subrayado ideal recomendada</b>:
+                <div class="ideal-comparison">
+                    <h4>Propuesta Sugerida de Subrayado Ideal:</h4>
+                    <div style="line-height:1.8; font-size:14px;">${datosSubrayado.textoSubrayadoIdealHTML}</div>
+                </div>
+            `;
+        }
+        feedbackBox.innerHTML = diagnosticoHTML;
+
+        // Construir Prompt
+        let resumenFormat = '';
+        CATEGORIAS.forEach(cat => {
+            const items = extraidos[cat.id];
+            resumenFormat += `\n${cat.nombre}:\n` + (items.length ? items.map(i => `  - "${i.texto}"`).join('\n') : "  - [Sin selecciones]");
+        });
+
+        const promptTexto = `Actúa como docente experto en comprensión lectora.
+
+EVALUACIÓN DE SUBRAYADO JERÁRQUICO
+Tema: "${datosSubrayado.subtitulo}"
+
+TEXTO COMPLETO:
+"${datosSubrayado.textoOrigen}"
+
+---
+SELECCIONES DEL ESTUDIANTE POR MARCADOR:
+${resumenFormat}
+
+MÉTRICA: ${ratio}% del texto fue subrayado.
+
+---
+POR FAVOR EVALÚA:
+1. Compara las selecciones del estudiante con el criterio ideal de jerarquización.
+2. ¿Clasificó correctamente cada tipo de dato (Conceptos vs Datos vs Causas)?
+3. Proporciona una calificación del 1 al 10 y una recomendación de mejora.`;
+
+        document.getElementById('prompt-ia-display').value = promptTexto;
+    }
+
+    function copiarPromptIA() {
+        const textarea = document.getElementById('prompt-ia-display');
+        if (!textarea.value) validarYGenerarEvaluacion();
+
+        textarea.select();
+        textarea.setSelectionRange(0, 99999);
+
+        navigator.clipboard.writeText(textarea.value).then(() => {
+            const btn = document.getElementById('btn-copiar-prompt');
+            const orig = btn.innerHTML;
+            btn.innerHTML = '✅ ¡Prompt Copiado!';
+            btn.style.background = 'var(--success-bg)';
+            btn.style.color = 'var(--success)';
+            setTimeout(() => {
+                btn.innerHTML = orig;
+                btn.style.background = 'var(--bg-surface)';
+                btn.style.color = 'var(--ink)';
+            }, 2500);
+        });
+    }
+
+    window.onload = initLayout;
+</script>
+
+</body>
+</html>

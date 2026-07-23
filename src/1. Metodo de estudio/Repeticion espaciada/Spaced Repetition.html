@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spaced Repetition - Leitner/Anki</title>
+<style>
+/* =========================================================
+   CSS PROPORCIONADO (Lúmina App)
+   ========================================================= */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&display=swap');
+.ai-result{max-width:700px;margin:22px 0;padding:15px 17px;border-radius:12px;background:var(--success-bg);border:1px solid var(--success-border);color:var(--success)}.ai-result b{font-size:11px}.ai-result p{margin:7px 0 0;font-size:12px;line-height:1.55;white-space:pre-wrap}.ai-result:fullscreen,.ai-result:-webkit-full-screen{max-width:none;width:100vw;height:100vh;margin:0;padding:26px 34px;overflow:auto;background:var(--bg-app);border-radius:0;border:none}.ai-result:fullscreen .mm-scroll,.ai-result:-webkit-full-screen .mm-scroll{height:calc(100vh - 110px)}
+.ai-result.is-pseudo-fullscreen{position:fixed;inset:0;z-index:9999;max-width:none;width:100vw;height:100vh;height:100dvh;margin:0;padding:18px 16px 16px;overflow:auto;background:var(--bg-app);border-radius:0;border:none}
+.ai-result.is-pseudo-fullscreen .mm-scroll{height:calc(100vh - 130px);height:calc(100dvh - 130px)}
+:root{
+  --font-sans:'Inter','DM Sans',sans-serif;
+  --font-serif:'Playfair Display',serif;
+  --font-mono:'DM Mono',monospace;
+
+  --violet:#7766c9;
+  --violet-hover:#6656b3;
+  --violet-soft-text:#8f79da;
+  --lav:#d9ceff;
+  --peach:#ffdcd2;
+
+  --bg-app:#f7f6fc;
+  --bg-sidebar:#f1effb;
+  --bg-surface:#fff;
+  --bg-surface-alt:#faf9fd;
+  --bg-soft:#eeeaff;
+  --bg-hero:#e9e5fb;
+  --bg-hover:#f5f3fc;
+  --bg-elevated:#fff;
+
+  --ink:#303249;
+  --muted:#777991;
+  --muted-2:#88869c;
+
+  --line:#e8e6f1;
+  --line-soft:#e4e1f2;
+  --line-accent:#c9bfeb;
+
+  --success:#4a8a73;
+  --success-bg:#effaf5;
+  --success-border:#cde9dd;
+  --danger:#b6666c;
+  --danger-bg:#fdeceb;
+  --danger-border:#f5d9d2;
+
+  --paper:#fbfbff;
+  --lilac:#eee9ff;
+  --mint:#d9f1e8;
+
+  --shadow-soft:0 3px 12px rgba(174,169,203,.13);
+  --shadow-card:0 9px 20px rgba(112,102,165,.09);
+  --shadow-modal:0 20px 60px rgba(39,35,62,.33);
+  --overlay:rgba(52,50,72,.4);
+
+  --decor-filter:none;
+}
+
+[data-theme="dark"]{
+  --bg-app:#131220;
+  --bg-sidebar:#171626;
+  --bg-surface:#1d1c2b;
+  --bg-surface-alt:#211f31;
+  --bg-soft:#282540;
+  --bg-hero:#242040;
+  --bg-hover:#242235;
+  --bg-elevated:#201e2f;
+  --ink:#eeedf6;
+  --muted:#a6a3bf;
+  --muted-2:#8f8caa;
+  --line:#312e46;
+  --line-soft:#2a2739;
+  --line-accent:#4a3f7a;
+  --success:#7cc9a5;
+  --success-bg:#17342a;
+  --success-border:#245240;
+  --danger:#e6969b;
+  --danger-bg:#3a2228;
+  --danger-border:#4d2b32;
+  --paper:#1a1929;
+  --lilac:#282540;
+  --mint:#17342a;
+  --shadow-soft:0 3px 12px rgba(0,0,0,.35);
+  --shadow-card:0 9px 20px rgba(0,0,0,.4);
+  --shadow-modal:0 20px 60px rgba(0,0,0,.55);
+  --overlay:rgba(5,4,12,.6);
+  --decor-filter:brightness(.82) saturate(.85);
+}
+
+*,*::before,*::after{transition:background-color .25s ease,border-color .25s ease,color .25s ease,box-shadow .25s ease}*{box-sizing:border-box}body{margin:0;background:var(--bg-app);color:var(--ink);font-family:var(--font-sans)}button,input,textarea{font:inherit;color:inherit}button{cursor:pointer;border:0}.app-shell{min-height:100vh;display:flex;background:var(--bg-app)}
+main{padding:38px 48px 60px;width:100%;max-width:900px;margin:0 auto;background:var(--bg-app)}main>header,.card-head,.section-heading,.study-head{display:flex;align-items:center;justify-content:space-between}.eyebrow{font:500 10px 'DM Mono',monospace;letter-spacing:1.25px;color:var(--muted-2);margin:0 0 9px}h1,h2,h3,p{margin-top:0}h1{font:600 34px 'Playfair Display',serif;margin-bottom:28px;letter-spacing:-1px; text-align:center;}h1 span{color:var(--violet-soft-text);font-size:23px; display:block;}
+.section-heading{margin-bottom:19px}.section-heading h2{font:600 22px 'Playfair Display',serif;margin:0}
+
+/* Estilos de Flashcards proporcionados */
+.fc-wrap{display:flex;flex-direction:column;align-items:center;padding:10px 0 4px}
+.fc-banner{font:500 10.5px 'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase;background:var(--violet);color:#fff;padding:6px 15px;border-radius:20px;margin-bottom:18px}
+.fc-dash{display:flex;gap:20px;margin-bottom:24px;font-size:12.5px;background:var(--bg-surface);color:var(--ink);padding:10px 20px;border-radius:30px;border:1px solid var(--line);box-shadow:0 5px 15px rgba(112,100,165,.08)}
+.fc-dash strong { color: var(--violet); font-family: 'DM Mono', monospace; font-size: 14px; margin-left: 5px; }
+.fc-container{perspective:1000px;width:100%;max-width:520px;height:280px;position:relative;margin-bottom:22px}
+.fc-card{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .4s ease;cursor:pointer}
+.fc-card.volteada{transform:rotateY(180deg)}
+.fc-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:18px;padding:34px;box-sizing:border-box;box-shadow:0 10px 25px rgba(103,88,183,.08);display:flex;flex-direction:column;justify-content:center;align-items:center;background:var(--bg-surface);color:var(--ink);border:1px solid var(--line);text-align:center}
+.fc-face.front{border-top:4px solid var(--violet)}
+.fc-face.back{transform:rotateY(180deg);overflow-y:auto;border-top:4px solid var(--mint)}
+.fc-texto{font-size:1.25em;line-height:1.4;font-family:'Playfair Display',serif}
+.fc-badge{position:absolute;bottom:13px;font:500 9px 'DM Mono',monospace;letter-spacing:1.4px;color:var(--muted);background:var(--lilac);padding:4px 9px;border-radius:6px}
+.fc-nav{display:flex;gap:10px;align-items:center;margin-bottom:16px}
+.fc-nav button{font-family:var(--font-sans);background:var(--bg-surface);border:1px solid var(--line);padding:9px 16px;border-radius:10px;font-size:12.5px;font-weight:600;cursor:pointer;transition:.2s;color:var(--ink)}
+.fc-nav .fc-main{background:var(--violet);color:#fff;border:none;padding:11px 24px;box-shadow:0 5px 14px rgba(98,80,168,.2); font-size: 14px;}
+.fc-nav .fc-main:hover{background:var(--violet-hover)}
+.fc-eval{display:flex;gap:10px;opacity:0;transform:translateY(10px);transition:all .3s ease;pointer-events:none; position: absolute;}
+.fc-eval.visible{opacity:1;transform:translateY(0);pointer-events:auto; position: relative;}
+.fc-eval button{border-radius:10px;padding:9px 16px;font-weight:600;font-size:12.5px;border:1px solid;cursor:pointer; display: flex; flex-direction: column; align-items: center; gap: 4px;}
+.fc-eval button small { font-family: 'DM Mono', monospace; font-size: 9px; opacity: 0.8; font-weight: 500; }
+
+.fc-btn-mal{border-color:var(--danger-border);background:var(--peach);color:var(--danger)}
+.fc-btn-mal:hover{filter:var(--decor-filter);background:#ffd0c2}
+.fc-btn-dificil{border-color:var(--line-accent);background:var(--bg-soft);color:var(--violet)}
+.fc-btn-dificil:hover{background:#e0d8fa}
+.fc-btn-bien{border-color:var(--success-border);background:var(--mint);color:var(--success)}
+.fc-btn-bien:hover{filter:var(--decor-filter);background:#cdeadf}
+.fc-btn-facil{border-color:transparent;background:var(--success);color:#fff}
+.fc-btn-facil:hover{background:#3b735f}
+
+.leitner{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-top:20px}.leitner div{border-radius:12px;padding:22px 14px;background:var(--success-bg);text-align:center;filter:var(--decor-filter);color:var(--ink); box-shadow: var(--shadow-soft); border: 1px solid var(--line);}.leitner div:nth-child(1){background:var(--danger-bg)}.leitner div:nth-child(2){background:var(--bg-soft)}.leitner div:nth-child(3){background:#fff0df}.leitner div:nth-child(4){background:var(--mint)}.leitner b{font:600 28px 'Playfair Display';display:block; color: var(--violet);}.leitner span{font-size:10px;color:var(--muted); text-transform: uppercase; font-family: 'DM Mono', monospace; letter-spacing: 1px;}
+@media(max-width:750px){main{padding:25px 18px;}.fc-eval{flex-wrap: wrap; justify-content: center;}.leitner{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <main>
+    <header style="justify-content: center; flex-direction: column;">
+      <h1>Spaced Repetition <span>Algoritmo de Retención (Sistema Leitner)</span></h1>
+    </header>
+
+    <!-- Envoltura principal de Flashcards -->
+    <div class="fc-wrap">
+      
+      <!-- Panel de Control de Vencidos (Dashboard) -->
+      <div class="fc-dash">
+         <div>Nuevas: <strong id="stat-new">0</strong></div>
+         <div>Para Repasar Hoy: <strong id="stat-due">0</strong></div>
+         <div>Dominadas: <strong id="stat-done">0</strong></div>
+      </div>
+
+      <!-- Contenedor 3D de la Tarjeta -->
+      <div class="fc-container">
+        <div class="fc-card" id="flashcard">
+          
+          <!-- Anverso -->
+          <div class="fc-face front">
+             <span class="fc-badge">Anverso (Pregunta)</span>
+             <div class="fc-texto" id="card-front">Cargando...</div>
+          </div>
+          
+          <!-- Reverso -->
+          <div class="fc-face back">
+             <span class="fc-badge">Reverso (Respuesta)</span>
+             <div class="fc-texto" id="card-back">Cargando...</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Botón de voltear -->
+      <div class="fc-nav" id="nav-flip">
+        <button class="fc-main" id="btn-flip">Mostrar Respuesta</button>
+      </div>
+
+      <!-- Botones de Evaluación Ebbinghaus -->
+      <div class="fc-eval" id="nav-eval">
+        <button class="fc-btn-mal" id="btn-again">Otra vez <small>&lt; 1 min</small></button>
+        <button class="fc-btn-dificil" id="btn-hard">Difícil <small>+ 1 día</small></button>
+        <button class="fc-btn-bien" id="btn-good">Bien <small>Progreso</small></button>
+        <button class="fc-btn-facil" id="btn-easy">Fácil <small>Salto</small></button>
+      </div>
+    </div>
+
+    <!-- Estadísticas de retención (Distribución en Cajas) -->
+    <div class="section-heading" style="margin-top: 50px;">
+      <h2>Distribución del Mazo (Dominio)</h2>
+    </div>
+    <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">
+        Las tarjetas avanzan de caja según tu retención. Mientras mayor sea la caja, más distanciado estará el próximo repaso gracias a la curva del olvido.
+    </p>
+    <div class="leitner" id="leitner-boxes">
+       <!-- Se llena con JavaScript -->
+    </div>
+
+  </main>
+</div>
+
+<script>
+// =========================================================================
+// LÓGICA DE ALGORITMO SPACED REPETITION (LocalStorage + Fechas)
+// =========================================================================
+
+const STORAGE_KEY = 'sr_anki_deck_v1';
+
+// Mazo por defecto (Si es la primera vez que entra)
+const defaultDeck = [
+    { id: 1, front: "¿Qué es el Active Recall?", back: "El esfuerzo activo de recuperar información de la memoria, fortaleciendo las conexiones neuronales.", level: 0, dueDate: 0 },
+    { id: 2, front: "¿En qué consiste la Curva del Olvido de Ebbinghaus?", back: "Demuestra cómo la retención de información disminuye exponencialmente con el tiempo si no hay intentos de retenerla (repaso).", level: 0, dueDate: 0 },
+    { id: 3, front: "¿Cuál es el propósito del Spaced Repetition?", back: "Aplanar la curva del olvido repasando la información justo en el momento en que el cerebro está a punto de olvidarla.", level: 0, dueDate: 0 },
+    { id: 4, front: "¿Cómo funciona el Sistema Leitner?", back: "Usa cajas. Si aciertas una tarjeta, avanza a la siguiente caja (repasos más largos). Si fallas, vuelve a la primera caja.", level: 0, dueDate: 0 }
+];
+
+// Cargar mazo de localStorage o inicializar
+let deck = JSON.parse(localStorage.getItem(STORAGE_KEY));
+if (!deck) {
+    deck = defaultDeck;
+    saveDeck();
+}
+
+let dueQueue = [];
+let currentCard = null;
+
+// Referencias del DOM
+const elFlashcard = document.getElementById('flashcard');
+const elFront = document.getElementById('card-front');
+const elBack = document.getElementById('card-back');
+const btnFlip = document.getElementById('btn-flip');
+const navFlip = document.getElementById('nav-flip');
+const navEval = document.getElementById('nav-eval');
+
+// Funciones de utilidad
+function saveDeck() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(deck));
+}
+
+// Cargar tarjetas pendientes para hoy
+function loadQueue() {
+    const now = Date.now();
+    // Filtramos tarjetas cuya fecha programada ya pasó o es 0 (nuevas)
+    dueQueue = deck.filter(card => card.dueDate <= now);
+    
+    updateDashboard();
+    renderLeitnerStats();
+    renderNextCard();
+}
+
+// Actualizar contadores superiores
+function updateDashboard() {
+    const now = Date.now();
+    const newCardsCount = deck.filter(c => c.level === 0).length;
+    const dueTodayCount = deck.filter(c => c.dueDate <= now && c.level > 0).length;
+    // Las completadas son aquellas cuya fecha de repaso es a futuro
+    const doneCount = deck.filter(c => c.dueDate > now).length;
+
+    document.getElementById('stat-new').innerText = newCardsCount;
+    document.getElementById('stat-due').innerText = dueTodayCount;
+    document.getElementById('stat-done').innerText = doneCount;
+}
+
+// Dibujar la siguiente tarjeta en pantalla
+function renderNextCard() {
+    elFlashcard.classList.remove('volteada'); // Resetear giro
+    navFlip.style.display = 'flex';
+    navEval.classList.remove('visible');
+
+    if (dueQueue.length === 0) {
+        elFront.innerHTML = "<span style='color:var(--success); font-size:40px; display:block; margin-bottom:10px;'>✔</span>¡Mazo al día!";
+        elBack.innerHTML = "Has completado todos los repasos programados para este momento. Vuelve más tarde o mañana.";
+        btnFlip.disabled = true;
+        btnFlip.innerText = "Nada por repasar";
+        currentCard = null;
+        return;
+    }
+
+    btnFlip.disabled = false;
+    btnFlip.innerText = "Mostrar Respuesta";
+    
+    // Tomamos la primera de la fila
+    currentCard = dueQueue[0];
+    elFront.innerHTML = currentCard.front;
+    elBack.innerHTML = currentCard.back;
+
+    // Actualizar dinámicamente los días en los botones "Bien" y "Fácil" según el nivel actual
+    const lvl = currentCard.level === 0 ? 1 : currentCard.level;
+    document.querySelector('#btn-good small').innerText = `+ ${lvl * 2} días`;
+    document.querySelector('#btn-easy small').innerText = `+ ${lvl * 4} días`;
+}
+
+// Voltear la tarjeta
+btnFlip.addEventListener('click', () => {
+    if(!currentCard) return;
+    elFlashcard.classList.add('volteada');
+    navFlip.style.display = 'none';
+    navEval.classList.add('visible');
+});
+
+// Lógica del Algoritmo Espaciado
+function processFeedback(quality) {
+    if(!currentCard) return;
+
+    const now = Date.now();
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+    let addDays = 0;
+
+    // Caja base si es nueva
+    if(currentCard.level === 0) currentCard.level = 1;
+
+    switch(quality) {
+        case 'again':
+            // Reinicio de intervalo (Vuelve a caja 1)
+            currentCard.level = 1;
+            addDays = 0; // Se repasa casi de inmediato
+            break;
+        case 'hard':
+            // Se mantiene en la misma caja, se programa para mañana
+            addDays = 1;
+            break;
+        case 'good':
+            // Avanza una caja. Multiplicador simple de intervalo
+            addDays = currentCard.level * 2;
+            currentCard.level += 1;
+            break;
+        case 'easy':
+            // Avanza dos cajas, el intervalo se expande fuertemente
+            addDays = currentCard.level * 4;
+            currentCard.level += 2;
+            break;
+    }
+
+    // Calcular nueva fecha dueDate (Timestamp en milisegundos)
+    if (addDays === 0) {
+         // Si pone "Otra vez", le sumamos 1 minuto para forzar que aparezca de nuevo al final de esta misma sesión
+         currentCard.dueDate = now + (60 * 1000); 
+         dueQueue.push(currentCard); // La mandamos al fondo de la cola actual
+    } else {
+         currentCard.dueDate = now + (addDays * ONE_DAY);
+    }
+
+    // Eliminamos la tarjeta actual del inicio de la cola
+    dueQueue.shift();
+    
+    // Guardar todo en LocalStorage y refrescar
+    saveDeck();
+    
+    // Retraso ligero para que el usuario vea que se evaluó, antes de girar de nuevo
+    setTimeout(() => {
+        updateDashboard();
+        renderLeitnerStats();
+        renderNextCard();
+    }, 200);
+}
+
+// Asignar eventos a los botones de evaluación
+document.getElementById('btn-again').addEventListener('click', () => processFeedback('again'));
+document.getElementById('btn-hard').addEventListener('click', () => processFeedback('hard'));
+document.getElementById('btn-good').addEventListener('click', () => processFeedback('good'));
+document.getElementById('btn-easy').addEventListener('click', () => processFeedback('easy'));
+
+// Renderizar el progreso visual en Cajas
+function renderLeitnerStats() {
+    const container = document.getElementById('leitner-boxes');
+    container.innerHTML = '';
+    
+    // Agrupamos conteo por niveles (Caja 1 a Caja 4+)
+    let boxCounts = { 1:0, 2:0, 3:0, 4:0 };
+    
+    deck.forEach(card => {
+        if (card.level > 0) {
+            let box = card.level > 4 ? 4 : card.level;
+            boxCounts[box]++;
+        }
+    });
+
+    const boxLabels = ["Caja 1 (Fase Aprendizaje)", "Caja 2 (En Progreso)", "Caja 3 (Retención Media)", "Caja 4+ (Dominio)"];
+
+    for(let i=1; i<=4; i++) {
+        const div = document.createElement('div');
+        div.innerHTML = `<b>${boxCounts[i]}</b><span>${boxLabels[i-1]}</span>`;
+        container.appendChild(div);
+    }
+}
+
+// Iniciar app
+loadQueue();
+
+</script>
+</body>
+</html>

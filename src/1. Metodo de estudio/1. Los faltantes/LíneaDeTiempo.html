@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Línea de Tiempo Conectada</title>
+<style>
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        font-family: 'DM Sans', sans-serif;
+        background-color: var(--bg-body); 
+        color: var(--ink);
+        line-height: 1.6;
+        padding-bottom: 60px;
+    }
+
+    .header-container {
+        text-align: center;
+        padding: 46px 20px 30px;
+        position: relative;
+    }
+
+    h1 {
+        font: 600 2.3em 'Playfair Display', serif;
+        letter-spacing: -0.5px;
+        margin: 0;
+        color: var(--ink);
+    }
+
+    .subtitulo {
+        font: 500 12px 'DM Mono', monospace;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        color: var(--violet);
+        margin-top: 10px;
+    }
+
+    #contenedor {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    /* Estructura de la Línea de Tiempo conector continuo */
+    .timeline {
+        position: relative;
+        padding-left: 40px;
+    }
+
+    /* Línea vertical continua que une todo de arriba a abajo */
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 15px;
+        top: 15px;
+        bottom: 15px;
+        width: 3px;
+        background: linear-gradient(to bottom, var(--violet), var(--line-accent));
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 35px;
+    }
+
+    .timeline-item:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Punto marcador sobre la línea */
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -29px;
+        top: 8px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background-color: var(--violet);
+        border: 3px solid var(--bg-body);
+        box-shadow: 0 0 0 2px var(--violet);
+        z-index: 2;
+    }
+
+    /* Pequeño conector horizontal que une el punto con la tarjeta */
+    .timeline-item::after {
+        content: '';
+        position: absolute;
+        left: -15px;
+        top: 14px;
+        width: 15px;
+        height: 2px;
+        background-color: var(--violet);
+    }
+
+    .timeline-content {
+        background: var(--bg-surface);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 20px 24px;
+        box-shadow: var(--shadow-card);
+        position: relative;
+        transition: transform 0.2s ease;
+    }
+
+    .timeline-content:hover {
+        border-color: var(--violet);
+    }
+
+    .timeline-fecha {
+        font: 600 12px 'DM Mono', monospace;
+        color: var(--violet);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 6px;
+        display: inline-block;
+        background: var(--bg-badge);
+        padding: 3px 8px;
+        border-radius: 6px;
+    }
+
+    .timeline-titulo {
+        font: 600 17px 'Playfair Display', serif;
+        color: var(--ink);
+        margin-bottom: 8px;
+    }
+
+    .timeline-descripcion {
+        font-size: 14.5px;
+        color: var(--ink);
+    }
+
+    .timeline-descripcion b { color: var(--violet); }
+
+    .timeline-conexion {
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px dashed var(--line);
+        font-size: 13px;
+        color: var(--muted);
+        font-style: italic;
+    }
+</style>
+</head>
+<body>
+
+<div class="header-container" id="header-container"></div>
+<div id="contenedor"></div>
+
+<script>
+    const themeConfig = {
+        light: {
+            "--ink": "#303249",
+            "--muted": "#777991",
+            "--violet": "#7766c9",
+            "--line": "#e8e6f1",
+            "--line-accent": "#c9bfeb",
+            "--bg-body": "#f7f6fc",
+            "--bg-surface": "#ffffff",
+            "--bg-badge": "#eae6fd",
+            "--shadow-card": "0 10px 25px rgba(103, 88, 183, 0.07)",
+        }
+    };
+
+    function applyTheme() {
+        const root = document.documentElement;
+        for (const [cssVariable, value] of Object.entries(themeConfig.light)) {
+            root.style.setProperty(cssVariable, value);
+        }
+    }
+    applyTheme();
+
+    const datosTimeline = {
+        tituloPagina: "Línea de Tiempo",
+        subtitulo: "Evolución Política: Las Provincias Unidas en 1820",
+        eventos: [
+            {
+                fecha: "Febrero de 1820",
+                titulo: "Batalla de Cepeda",
+                descripcion: "Los caudillos federales <b>Estanislao López</b> y <b>Francisco Ramírez</b> derrotaron al Directorio porteño, provocando la caída del gobierno central.",
+                conexion: "➡ Este colapso institucional desencadenó la firma inmediata de pactos entre las provincias autónomas."
+            },
+            {
+                fecha: "Febrero de 1820",
+                titulo: "Tratado del Pilar",
+                descripcion: "Firma del pacto interprovincial entre Buenos Aires, Santa Fe y Entre Ríos para establecer las bases de una futura organización federal.",
+                conexion: "➡ Al buscar la paz y la libre navegación, abrió paso a un periodo de reacomodo político interno en Buenos Aires."
+            },
+            {
+                fecha: "Marzo de 1820",
+                titulo: "La 'Feliz Experiencia' de Buenos Aires",
+                descripcion: "Comienza un período de estabilidad y modernización cultural bajo el gobierno de <b>Martín Rodríguez</b> y <b>Bernardino Rivadavia</b>.",
+                conexion: "➡ Mientras Buenos Aires se aislaba y prosperaba, la necesidad de pacificar la región con Santa Fe seguía latente."
+            },
+            {
+                fecha: "Noviembre de 1820",
+                titulo: "Tratado de Benegas",
+                descripcion: "Acuerdo impulsado por <b>Estanislao López</b> y <b>Juan Manuel de Rosas</b> para sellar la paz definitiva entre Buenos Aires y Santa Fe.",
+                conexion: "➡ Con este tratado se consolidó el equilibrio regional y se preparó el terreno para un nuevo congreso constituyente."
+            }
+        ]
+    };
+
+    function renderEncabezado(datos) {
+        const cont = document.getElementById('header-container');
+        const h1 = document.createElement('h1');
+        h1.textContent = datos.tituloPagina;
+        cont.appendChild(h1);
+        const sub = document.createElement('div');
+        sub.className = 'subtitulo';
+        sub.textContent = datos.subtitulo;
+        cont.appendChild(sub);
+        document.title = datos.tituloPagina + ' — ' + datos.subtitulo;
+    }
+
+    function renderTimeline(datos) {
+        const contenedor = document.getElementById('contenedor');
+        
+        const wrapper = document.createElement('div');
+        wrapper.className = 'timeline';
+        
+        datos.eventos.forEach(item => {
+            const itemEl = document.createElement('div');
+            itemEl.className = 'timeline-item';
+            
+            let conexionHTML = item.conexion ? `<div class="timeline-conexion">${item.conexion}</div>` : '';
+            
+            itemEl.innerHTML = `
+                <div class="timeline-content">
+                    <div class="timeline-fecha">${item.fecha}</div>
+                    <div class="timeline-titulo">${item.titulo}</div>
+                    <div class="timeline-descripcion">${item.descripcion}</div>
+                    ${conexionHTML}
+                </div>
+            `;
+            wrapper.appendChild(itemEl);
+        });
+        
+        contenedor.appendChild(wrapper);
+    }
+
+    renderEncabezado(datosTimeline);
+    renderTimeline(datosTimeline);
+</script>
+
+</body>
+</html>

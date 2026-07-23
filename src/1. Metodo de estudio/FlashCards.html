@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estudio Eficiente - Modelo Agroexportador</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <style>
+        :root {
+            --ink: #303249;
+            --muted: #777991;
+            --paper: #fbfbff;
+            --lilac: #eee9ff;
+            --lav: #d9ceff;
+            --mint: #d9f1e8;
+            --line: #e8e6f1;
+            --violet: #7766c9;
+            --peach: #ffdcd2;
+            --accent-green: #4a8a73;
+            --accent-red: #b6666c;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: #f7f6fc;
+            color: var(--ink);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            user-select: none;
+        }
+
+        h1 {
+            font: 600 2.2em 'Playfair Display', serif;
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+        }
+
+        .etapa-banner {
+            font: 500 11px 'DM Mono', monospace;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: var(--violet);
+            color: #fff;
+            padding: 7px 16px;
+            border-radius: 20px;
+            margin-bottom: 22px;
+        }
+
+        .dashboard {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 32px;
+            font-size: 13px;
+            background: #fff;
+            padding: 12px 24px;
+            border-radius: 30px;
+            border: 1px solid var(--line);
+            box-shadow: 0 5px 15px rgba(112, 100, 165, 0.08);
+        }
+
+        .stat span {
+            font-weight: 700;
+        }
+
+        .stat-bien {
+            color: var(--accent-green);
+        }
+
+        .stat-mal {
+            color: var(--accent-red);
+        }
+
+        .card-container {
+            perspective: 1000px;
+            width: 100%;
+            max-width: 600px;
+            height: 380px;
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        .flashcard {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.4s ease;
+            cursor: pointer;
+        }
+
+        .flashcard.volteada {
+            transform: rotateY(180deg);
+        }
+
+        .face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 18px;
+            padding: 40px;
+            box-sizing: border-box;
+            box-shadow: 0 10px 25px rgba(103, 88, 183, 0.08);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #fff;
+            border: 1px solid var(--line);
+        }
+
+        .face.front {
+            border-top: 4px solid var(--violet);
+        }
+
+        .back {
+            transform: rotateY(180deg);
+            overflow-y: auto;
+            border-top: 4px solid var(--mint);
+        }
+
+        .texto-contenido {
+            font-size: 1.4em;
+            line-height: 1.4;
+            text-align: center;
+            margin-top: 10px;
+            font-family: 'Playfair Display', serif;
+        }
+
+        .badge-tipo {
+            position: absolute;
+            bottom: 15px;
+            font: 500 9px 'DM Mono', monospace;
+            letter-spacing: 1.5px;
+            color: var(--muted);
+            background: var(--lilac);
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        .navigation-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            font-family: 'DM Sans', sans-serif;
+            background: #fff;
+            border: 1px solid var(--line);
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--ink);
+        }
+
+        button:hover {
+            background: #f7f6fa;
+            border-color: var(--lav);
+        }
+
+        .btn-main {
+            background: var(--violet);
+            color: white;
+            border: none;
+            padding: 10px 26px;
+            box-shadow: 0 5px 14px rgba(98, 80, 168, 0.2);
+        }
+
+        .btn-main:hover {
+            background: #6656b3;
+        }
+
+        .evaluation-zone {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .evaluation-zone.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .btn-bien {
+            border-color: #cde9dd;
+            background: var(--mint);
+            color: var(--accent-green);
+        }
+
+        .btn-bien:hover {
+            background: #cdeadf;
+        }
+
+        .btn-mal {
+            border-color: #f5d9d2;
+            background: var(--peach);
+            color: var(--accent-red);
+        }
+
+        .btn-mal:hover {
+            background: #ffd0c2;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Geografía: Modelo Agro-Exportador</h1>
+
+    <div class="etapa-banner" id="banner-etapa">Fase 1: Vuelta Completa</div>
+
+    <div class="dashboard">
+        <div class="stat">Tarjeta: <span id="num-posicion">0</span>/<span id="num-total-mazo">0</span></div>
+        <div class="stat stat-bien">Bien: <span id="num-bien">0</span></div>
+        <div class="stat stat-mal">Mal: <span id="num-mal">0</span></div>
+    </div>
+
+    <div class="card-container">
+        <div class="flashcard" id="tarjeta" onclick="voltearTarjeta()">
+            <div class="face front">
+                <div class="texto-contenido" id="texto-pregunta">Cargando pregunta...</div>
+                <div class="badge-tipo">PREGUNTA</div>
+            </div>
+            <div class="face back">
+                <div class="texto-contenido" id="texto-respuesta">Cargando respuesta...</div>
+                <div class="badge-tipo">RESPUESTA</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="navigation-controls">
+        <button id="btn-atras" onclick="irAtras()">⬅ Atrás</button>
+        <button class="btn-main" onclick="voltearTarjeta()">Voltear</button>
+        <button onclick="irSiguiente()">Siguiente ➡</button>
+    </div>
+
+    <div class="evaluation-zone" id="zona-evaluacion">
+        <button class="btn-bien" onclick="registrarCalificacion(true)">✓ Estaba Bien</button>
+        <button class="btn-mal" onclick="registrarCalificacion(false)">✗ Estaba Mal</button>
+    </div>
+
+    <script>
+        const bancoPreguntas = [
+            { p: "¿Qué fue el modelo agro-exportador?", r: "Fue el motor económico de Argentina entre 1880 y 1916, basado en la exportación masiva de productos primarios al mercado mundial. Consistió en la integración exitosa del país al capitalismo internacional, ensamblando recursos locales (tierra abundante) con capital y trabajo provenientes de Europa." },
+            { p: "¿Qué datos de la economía del modelo marca un crecimiento distintivo?", r: "El crecimiento distintivo se refleja en que la economía argentina se multiplicó nueve veces entre 1880 y 1916, mientras que la población solo se triplicaba. Durante este período, el Producto Bruto Interno (PBI) creció a una tasa muy alta del 6% anual y el producto per cápita lo hizo a un 3% anual." },
+            { p: "Explicar la influencia de la \"fiebre lanar\" en el modelo agro-exportador", r: "Ocurrió entre 1840 y 1880 y fue fundamental porque sentó las bases del crecimiento económico. La lana de ovejas raza Merino se convirtió en el principal bien exportable del país de manera sostenida antes del auge de los cereales y la carne vacuna." },
+            { p: "¿Qué cambios productivos se produjeron en la geografía Argentina?", r: "Se produjo un desplazamiento productivo: los cultivos y las vacas de raza desplazaron a las ovejas hacia el sur del país. Además, hubo un \"doble movimiento de fronteras\": una frontera política/militar que se apropió de tierras vírgenes, seguida de una frontera productiva que las pobló y explotó. Esto modeló el paisaje de las pampas con las características que prevalecen hasta hoy." },
+            { p: "5. ¿Qué influencia tuvo la carne refrigerada en el modelo agro-exportador?", r: "A principios del siglo XX, la carne refrigerada se transformó en la nueva estrella de las exportaciones. Superó al proceso de congelado (que quitaba sabor y valor nutritivo) gracias a técnicas modernas implementadas por capitales norteamericanos en frigoríficos locales. Esto permitió que la carne vacuna alcanzara cifras récord, pasando de 0 a casi 36.897 toneladas exportadas entre 1881 y 1914." },
+            { p: "¿Cuál era el fin del Estado Argentino en la elección de un modelo productivo?", r: "El fin principal era consolidar el Estado y ensamblar los recursos naturales del país con las necesidades del mercado mundial para forjar la matriz productiva, demográfica y territorial de la Argentina moderna. Buscaba posicionar a Argentina en América del Sur en el lugar que EE.UU. ocupaba en el norte." },
+            { p: "¿Qué influencia tuvo el ferrocarril en el modelo agro-exportador?", r: "Fue el \"sistema nervioso del comercio\". Fue fundamental para: Permitir la exportación de cereales a gran escala. Conectar el interior con los puertos; la red pasó de 2.500 km en 1880 a 34.500 km en 1916. Atraer inversiones extranjeras, ya que el Estado garantizaba una ganancia sobre el capital invertido." },
+            { p: "La inmigración fue importante para el modelo, ¿cómo?", r: "Fue el \"motor humano\" que solucionó la falta de mano de obra. Europa, con exceso de población, proveyó los trabajadores que Argentina necesitaba. Los inmigrantes eran atraídos por salarios más altos y las posibilidades de movilidad social en un país nuevo." },
+            { p: "¿Cómo influyó las tierras de la pampa húmeda en el modelo?", r: "La tierra fue el factor de producción abundante. El clima óptimo y la calidad del suelo de las pampas permitieron producir bienes con una demanda crescent a nivel mundial, lo que facilitó la inserción de Argentina en la élite del capitalismo internacional." },
+            { p: "¿Cuál fue la arquitectura del sistema productivo?", r: "Se basó en la interacción de tres \"engranajes\" principales bajo el control del Estado Central: Tierra: Factor abundante con clima óptimo. Trabajo: Crecimiento demográfico e inmigración europea. Capital: Excedentes provenientes de la industrialización europea." },
+            { p: "¿Qué rol cumplió el Estado en el sistema productivo?", r: "El Estado fue el encargado de brindar orden político y jurídico para proteger vidas, propiedades y emprendimientos tras las guerras civiles. Además, impulsó las inversiones extranjeras garantizando ganancias con sus propios ingresos y asegurando el marco legal para el comercio." },
+            { p: "¿En qué consistió la estancia mixta?", r: "La Estancia Mixta fue la combinación eficiente entre agricultura y ganadería en un mismo establecimiento. Esta asociación permitió elevar la producción a niveles que convirtieron a Argentina en el granero del mundo, aumentando el valor de las exportaciones agrícolas de 450.000 pesos oro en 1880 a 300.000.000 en 1913." },
+            { p: "¿Cuándo comenzó a representar un rol importante la industria?", r: "Aunque el modelo era agroexportador, la sofisticación del sistema impulsó una industrialización incipiente. En 1881, la industria representaba el 10,7% del producto total, pero para 1916 ya alcanzaba el 27,8%, superando individualmente a la agricultura (18,3%) y a la ganadería (18,3%) en peso relativo." },
+            { p: "Explicar la estructura social de la pampa húmeda", r: "Se organizaba en una pirámide de tres niveles: Grandes Propietarios: Dueños de vastas extensiones de tierra (nacionales o extranjeros); eran el vértice del sistema. El Chacarero: Pequeño productor que no poseía la tierra, sino que la arrendaba a los grandes propietarios para explotarla. El Jornalero (o Bracero): Trabajador del campo que operaba a cambio de un salario, generalmente bajo un régimen de trabajo estacional." },
+            { p: "¿Qué diferencia existe entre \"invernador\" y \"Criador\"?", r: "El Criador: Se sitúa al inicio de la cadena; se dedica a la cría del ganado hasta cierta edad. Utilizaba tierras menos productivas o con peores pastos y era el que menos ganaba en el negocio. El Invernador: Se sitúa al final de la cadena; compraba el ganado al criador para el engorde y la venta final. Poseía las mejores tierras de la Pampa y su trabajo era altamente lucrativo, quedándose con el mayor margen de rentabilidad." }
+        ];
+
+        let mazoActual = [];
+        let indiceActual = 0;
+        let erroresSurgidos = [];
+        let historialAcciones = [];
+        let enFaseRepaso = false;
+
+        let contadorBien = 0;
+        let contadorMal = 0;
+
+        function mezclarMazo(array) {
+            let lista = [...array];
+            for (let i = lista.length - 1; i > 0; i--) {
+                let j = Math.floor(Math.random() * (i + 1));
+                [lista[i], lista[j]] = [lista[j], lista[i]];
+            }
+            return lista;
+        }
+
+        function iniciarAplicacion() {
+            mazoActual = mezclarMazo(bancoPreguntas);
+            indiceActual = 0;
+            erroresSurgidos = [];
+            historialAcciones = [];
+            enFaseRepaso = false;
+            contadorBien = 0;
+            contadorMal = 0;
+
+            document.getElementById("banner-etapa").innerText = "Fase 1: Vuelta Completa";
+            document.getElementById("banner-etapa").style.background = "#3498db";
+
+            mostrarTarjeta();
+        }
+
+        function mostrarTarjeta() {
+            if (mazoActual.length === 0) {
+                comprobarCambioDeFase();
+                return;
+            }
+
+            let card = mazoActual[indiceActual];
+
+            document.getElementById("tarjeta").classList.remove("volteada");
+            document.getElementById("zona-evaluacion").classList.remove("visible");
+
+            document.getElementById("texto-pregunta").innerText = card.p;
+            document.getElementById("texto-respuesta").innerText = card.r;
+
+            document.getElementById("num-posicion").innerText = indiceActual + 1;
+            document.getElementById("num-total-mazo").innerText = mazoActual.length;
+            document.getElementById("num-bien").innerText = contadorBien;
+            document.getElementById("num-mal").innerText = contadorMal;
+        }
+
+        function voltearTarjeta() {
+            const el = document.getElementById("tarjeta");
+            el.classList.toggle("volteada");
+
+            if (el.classList.contains("volteada")) {
+                document.getElementById("zona-evaluacion").classList.add("visible");
+            } else {
+                document.getElementById("zona-evaluacion").classList.remove("visible");
+            }
+        }
+
+        function registrarCalificacion(estabaBien) {
+            let tarjetaEvaluada = mazoActual[indiceActual];
+
+            historialAcciones.push({
+                tarjeta: tarjetaEvaluada,
+                calificacion: estabaBien,
+                indiceOriginal: indiceActual
+            });
+
+            if (estabaBien) {
+                contadorBien++;
+            } else {
+                contadorMal++;
+                if (!erroresSurgidos.some(c => c.p === tarjetaEvaluada.p)) {
+                    erroresSurgidos.push(tarjetaEvaluada);
+                }
+            }
+
+            mazoActual.splice(indiceActual, 1);
+
+            if (mazoActual.length === 0) {
+                comprobarCambioDeFase();
+            } else {
+                if (indiceActual >= mazoActual.length) {
+                    indiceActual = 0;
+                }
+                mostrarTarjeta();
+            }
+        }
+
+        function irSiguiente() {
+            if (indiceActual < mazoActual.length - 1) {
+                indiceActual++;
+                mostrarTarjeta();
+            } else {
+                indiceActual = 0;
+                mostrarTarjeta();
+            }
+        }
+
+        function irAtras() {
+            if (historialAcciones.length > 0) {
+                let ultimaAccion = historialAcciones.pop();
+                let t = ultimaAccion.tarjeta;
+
+                if (ultimaAccion.calificacion) {
+                    contadorBien--;
+                } else {
+                    contadorMal--;
+                    erroresSurgidos = erroresSurgidos.filter(c => c.p !== t.p);
+                }
+
+                mazoActual.splice(ultimaAccion.indiceOriginal, 0, t);
+                indiceActual = ultimaAccion.indiceOriginal;
+                mostrarTarjeta();
+            }
+        }
+
+        function comprobarCambioDeFase() {
+            if (!enFaseRepaso) {
+                if (erroresSurgidos.length > 0) {
+                    alert("¡Vuelta completa terminada! Ahora pasamos a repasar únicamente las que salieron MAL.");
+                    enFaseRepaso = true;
+                    document.getElementById("banner-etapa").innerText = "Fase 2: Repaso de Errores";
+                    document.getElementById("banner-etapa").style.background = "#e74c3c";
+
+                    mazoActual = mezclarMazo(erroresSurgidos);
+                    erroresSurgidos = [];
+                    historialAcciones = [];
+                    indiceActual = 0;
+                    mostrarTarjeta();
+                } else {
+                    alert("¡Felicitaciones! Respondiste todas bien en la primera vuelta.");
+                    iniciarAplicacion();
+                }
+            } else {
+                if (erroresSurgidos.length > 0) {
+                    alert("Terminaste el repaso, pero quedan errores. Volvemos a repasar los fallos.");
+                    mazoActual = mezclarMazo(erroresSurgidos);
+                    erroresSurgidos = [];
+                    historialAcciones = [];
+                    indiceActual = 0;
+                    mostrarTarjeta();
+                } else {
+                    alert("¡Completado! Lograste corregir todas tus respuestas falladas.");
+                    iniciarAplicacion();
+                }
+            }
+        }
+
+        window.onload = iniciarAplicacion;
+    </script>
+</body>
+
+</html>

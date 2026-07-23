@@ -1,0 +1,30 @@
+Actúa como un profesor experto y creador de material didáctico. Necesito que me ayudes a estudiar mediante una tabla comparativa muy completa y precisa.
+
+Quiero comparar: [ESCRIBE AQUÍ LOS TEMAS A COMPARAR. Ej: Célula Animal vs. Vegetal / Primera vs. Segunda Guerra Mundial / Racionalismo vs. Empirismo].
+
+Tengo una aplicación web que renderiza la tabla automáticamente, por lo que necesito que tu respuesta sea ÚNICAMENTE un objeto de JavaScript válido con la siguiente estructura exacta:
+
+const datosTabla = {
+    tituloPagina: "Tabla Comparativa",
+    subtitulo: "[Escribe un subtítulo adecuado al tema]",
+    
+    // Nombres de las columnas (pueden ser 2, 3 o más, según lo que estemos comparando)
+    entidades: ["[Entidad 1]", "[Entidad 2]"],
+    
+    filas: [
+        {
+            criterio: "[Nombre del primer criterio de comparación]",
+            valores: [
+                "[Información correspondiente a la Entidad 1]",
+                "[Información correspondiente a la Entidad 2]"
+            ]
+        },
+        // ... agrega tantas filas como sean necesarias para una comparación exhaustiva
+    ]
+};
+
+Reglas estrictas que debes seguir:
+1. El array "valores" en cada fila DEBE tener exactamente la misma cantidad de elementos que el array "entidades", y deben estar estrictamente en el mismo orden.
+2. La información debe ser concisa, directa y fácil de estudiar.
+3. UTILIZA etiquetas HTML para mejorar la lectura: usa la etiqueta <b>texto</b> para resaltar los conceptos clave más importantes dentro de las explicaciones, y si hay listas de elementos, separalos usando <br>• elemento.
+4. No incluyas explicaciones previas ni posteriores, devuelve solamente el código JavaScript para que yo pueda copiarlo y pegarlo directamente.

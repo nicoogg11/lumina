@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Síntesis Guiada por Niveles de Abstracción</title>
+<style>
+    /* Importación de fuentes oficiales */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&display=swap');
+
+    /* Variables del Sistema de Diseño */
+    :root {
+        --ink: #303249;
+        --muted: #777991;
+        --paper: #fbfbff;
+        --lilac: #eee9ff;
+        --lav: #d9ceff;
+        --mint: #d9f1e8;
+        --line: #e8e6f1;
+        --line-soft: #eceaf3;
+        --line-accent: #c6bbf8;
+        --violet: #7766c9;
+        --violet-hover: #6250a8;
+        --peach: #ffdcd2;
+        --bg-app: #f7f6fc;
+        --bg-surface: #ffffff;
+        --bg-surface-alt: #fcfbfe;
+        --bg-soft: #f1edfe;
+        --shadow-card: 0 4px 20px rgba(48, 50, 73, 0.05);
+        
+        --success: #2e7d32;
+        --success-bg: #edf7ed;
+        --success-border: #c8e6c9;
+        --danger: #c62828;
+        --danger-bg: #ffebee;
+        --danger-border: #ffcdd2;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background-color: var(--bg-app);
+        color: var(--ink);
+        line-height: 1.5;
+        padding-bottom: 60px;
+    }
+
+    /* Encabezado */
+    .cn-header {
+        text-align: center;
+        padding: 42px 20px 22px;
+    }
+
+    .cn-header h2 {
+        font: 700 2.2em 'Playfair Display', serif;
+        letter-spacing: -0.5px;
+        margin: 0;
+        color: var(--ink);
+    }
+
+    .cn-sub {
+        font: 500 12.5px 'DM Mono', monospace;
+        color: var(--muted);
+        margin-top: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Estructura del Embudo */
+    .funnel-container {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 0 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+    }
+
+    .funnel-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 24px 28px;
+        box-shadow: var(--shadow-card);
+        position: relative;
+        transition: border-color 0.2s ease;
+    }
+
+    .funnel-card:hover {
+        border-color: var(--line-accent);
+    }
+
+    .layer-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font: 600 10.5px 'DM Mono', monospace;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        padding: 4px 12px;
+        border-radius: 20px;
+        background: var(--bg-soft);
+        color: var(--violet);
+        margin-bottom: 12px;
+    }
+
+    .layer-title {
+        font: 600 20px 'Playfair Display', serif;
+        margin: 0 0 6px;
+        color: var(--ink);
+    }
+
+    .layer-desc {
+        font-size: 13px;
+        color: var(--muted);
+        margin: 0 0 16px;
+    }
+
+    .orig-text-box {
+        background: var(--paper);
+        border: 1px solid var(--line-soft);
+        border-radius: 12px;
+        padding: 16px;
+        font-size: 13.5px;
+        line-height: 1.6;
+        color: var(--ink);
+        max-height: 220px;
+        overflow-y: auto;
+    }
+
+    .sintesis-textarea {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--bg-surface-alt);
+        color: var(--ink);
+        padding: 14px;
+        font-family: inherit;
+        font-size: 13.5px;
+        line-height: 1.55;
+        outline: none;
+        resize: vertical;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .sintesis-textarea:focus {
+        border-color: var(--violet);
+        box-shadow: 0 0 0 3px rgba(119, 102, 201, 0.15);
+    }
+
+    .meter-bar-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 10px;
+        font: 500 11px 'DM Mono', monospace;
+        color: var(--muted);
+    }
+
+    .bullet-inputs {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .bullet-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .bullet-num {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--bg-soft);
+        color: var(--violet);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font: 600 12px 'DM Mono', monospace;
+        flex-shrink: 0;
+    }
+
+    .bullet-input {
+        flex: 1;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 14px;
+        background: var(--bg-surface-alt);
+        color: var(--ink);
+        font-size: 13px;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.2s ease;
+    }
+
+    .bullet-input:focus {
+        border-color: var(--violet);
+    }
+
+    .action-row {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        margin-top: 8px;
+    }
+
+    .val-btn {
+        background: var(--violet);
+        color: #ffffff;
+        border: none;
+        padding: 14px 30px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(119, 102, 201, 0.3);
+        transition: background 0.2s ease, transform 0.15s ease;
+    }
+
+    .val-btn:hover {
+        background: var(--violet-hover);
+        transform: translateY(-1px);
+    }
+
+    /* Panel de Evaluación y Comparación */
+    .validation-panel {
+        display: none;
+        background: var(--bg-surface);
+        border: 2px solid var(--violet);
+        border-radius: 18px;
+        padding: 26px;
+        margin-top: 10px;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .val-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 14px;
+        margin-bottom: 16px;
+    }
+
+    .val-status-chip {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font: 600 11px 'DM Mono', monospace;
+    }
+
+    .val-status-chip.pass { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
+    .val-status-chip.warn { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
+
+    /* Caja del Prompt para la IA */
+    .prompt-box-wrapper {
+        background: var(--bg-soft);
+        border: 1px dashed var(--violet);
+        border-radius: 14px;
+        padding: 18px;
+        margin: 22px 0;
+    }
+
+    .prompt-box-title {
+        font: 600 14px 'Playfair Display', serif;
+        color: var(--violet);
+        margin: 0 0 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .prompt-box-desc {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 0 0 12px;
+    }
+
+    .prompt-textarea {
+        width: 100%;
+        height: 160px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #ffffff;
+        color: var(--ink);
+        padding: 12px;
+        font-family: 'DM Mono', monospace;
+        font-size: 11.5px;
+        line-height: 1.5;
+        resize: vertical;
+        outline: none;
+    }
+
+    .copy-btn {
+        background: var(--violet);
+        color: #ffffff;
+        border: none;
+        padding: 9px 18px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: background 0.2s ease;
+    }
+
+    .copy-btn:hover {
+        background: var(--violet-hover);
+    }
+
+    .comparison-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 14px;
+    }
+
+    .comp-box {
+        background: var(--paper);
+        border: 1px solid var(--line-soft);
+        border-radius: 12px;
+        padding: 16px;
+    }
+
+    .comp-box h4 {
+        font: 600 12px 'DM Mono', monospace;
+        margin: 0 0 8px;
+        color: var(--violet);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    @media (max-width: 680px) {
+        .comparison-grid { grid-template-columns: 1fr; }
+        .funnel-card { padding: 18px 20px; }
+    }
+</style>
+</head>
+<body>
+
+<div class="cn-header" id="header-container"></div>
+
+<div class="funnel-container">
+
+    <div class="funnel-card">
+        <span class="layer-badge">Capa 0 — Material Base</span>
+        <h2 class="layer-title">Texto Origen</h2>
+        <p class="layer-desc">Lee con atención el texto completo antes de comenzar a reducir la información.</p>
+        <div class="orig-text-box" id="texto-origen-display"></div>
+        <div class="meter-bar-wrap">
+            <span id="orig-word-count">Palabras totales: 0</span>
+            <span id="target-layer1-count">Límite Capa 1: máx. 0 palabras</span>
+        </div>
+    </div>
+
+    <div class="funnel-card">
+        <span class="layer-badge">Capa 1 — Selección e Ideas Principales</span>
+        <h2 class="layer-title">Compresión al 50%</h2>
+        <p class="layer-desc">Redacta las ideas esenciales eliminando ejemplos, fechas secundarias y relleno.</p>
+        <textarea id="capa1-input" class="sintesis-textarea" rows="5" placeholder="Escribe tu resumen comprimido aquí..."></textarea>
+        <div class="meter-bar-wrap">
+            <span id="capa1-counter">0 palabras introducidas</span>
+            <span id="capa1-status"></span>
+        </div>
+    </div>
+
+    <div class="funnel-card">
+        <span class="layer-badge">Capa 2 — Esquematización</span>
+        <h2 class="layer-title">Lista de Puntos Clave (Máx. 5)</h2>
+        <p class="layer-desc">Sintetiza la Capa 1 en una lista de hasta 5 ítems o frases ultra-cortas con las ideas centrales.</p>
+        <div class="bullet-inputs" id="bullet-inputs-container">
+            </div>
+    </div>
+
+    <div class="funnel-card">
+        <span class="layer-badge">Capa 3 — Abstracción Suprema</span>
+        <h2 class="layer-title">Elevator Pitch (1 Sola Oración)</h2>
+        <p class="layer-desc">Condensa absolutamente todo el tema en una única oración contundente.</p>
+        <textarea id="capa3-input" class="sintesis-textarea" rows="2" placeholder="Una sola oración completa que englobe todo el concepto..."></textarea>
+        <div class="meter-bar-wrap">
+            <span id="capa3-counter">0 oraciones detectadas</span>
+            <span id="capa3-status"></span>
+        </div>
+    </div>
+
+    <div class="action-row">
+        <button class="val-btn" onclick="validarYComparar()">Validar y Comparar Síntesis</button>
+    </div>
+
+    <div class="validation-panel" id="val-panel">
+        
+        <div class="val-header">
+            <h3 style="font-family:'Playfair Display', serif; margin:0; font-size: 1.3em;">Evaluación de la Comprensión</h3>
+            <span class="val-status-chip" id="val-chip">Verificando...</span>
+        </div>
+        
+        <div id="val-feedback" style="font-size: 13.5px; line-height: 1.5; color: var(--ink);"></div>
+
+        <div class="prompt-box-wrapper">
+            <div class="prompt-box-title">
+                🤖 Prompt personalizado para consultar a la IA
+            </div>
+            <p class="prompt-box-desc">
+                Este texto incluye automáticamente lo que redactaste arriba. Cópialo y pégalo en ChatGPT, Claude o Gemini para obtener una revisión pedagógica de tu estudio.
+            </p>
+            <textarea id="prompt-ia-display" class="prompt-textarea" readonly></textarea>
+            <button class="copy-btn" id="btn-copiar-prompt" onclick="copiarPromptIA()">
+                📋 Copiar Prompt para la IA
+            </button>
+        </div>
+
+        <h3 style="font-family:'Playfair Display', serif; margin: 24px 0 10px; font-size: 1.2em;">Síntesis Ideal de Referencia</h3>
+        
+        <div class="comparison-grid">
+            <div class="comp-box">
+                <h4>Capa 1 Ideal (50%)</h4>
+                <p id="ideal-c1" style="font-size: 13px; line-height: 1.5; margin:0;"></p>
+            </div>
+            <div class="comp-box">
+                <h4>Capa 2 Ideal (Puntos Clave)</h4>
+                <ul id="ideal-c2" style="font-size: 12.5px; padding-left: 18px; margin:0; line-height: 1.5;"></ul>
+            </div>
+        </div>
+
+        <div class="comp-box" style="margin-top: 14px;">
+            <h4>Capa 3 Ideal (Elevator Pitch)</h4>
+            <p id="ideal-c3" style="font-size: 13.5px; font-weight: 600; color: var(--violet); margin: 0;"></p>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    // =====================================================================
+    // OBJETO DE DATOS MODIFICABLE POR IA (JAVASCRIPT)
+    // =====================================================================
+    const datosSintesis = {
+        tituloPagina: "Síntesis por Embudo",
+        subtitulo: "Los Caudillos y el Poder Provincial (1820)",
+        asignatura: "Historia Argentina",
+        fecha: "Década de 1820",
+        
+        // Texto original completo
+        textoOrigen: "En la década de 1820, los gobernadores caudillos ejercieron un rol político fundamental como máxima autoridad provincial. Provenían de familias con fortunas coloniales o comerciales, poseían tierras y contaban con prestigio militar tras las guerras de Independencia. Aunque la visión tradicional los catalogaba como líderes demagógicos que manipulaban a masas pasivas, historiadores actuales como Ariel de la Fuente demuestran que existía un vínculo de legitimación activa y emotiva con el pueblo. Además, lejos de ser anárquicos, dotaron a sus provincias de constituciones, reglamentos e instituciones como las Salas de Representantes. Asimismo, firmaron acuerdos e importantes pactos interprovinciales para resolver límites, fomentar el comercio y cimentar las bases de la futura unidad nacional.",
+
+        // Solución ideal generada para la comparativa
+        capa1Ideal: "En la década de 1820, los caudillos asumieron la autoridad provincial respaldados por su poder económico, prestigio militar y una legitimación popular activa. Lejos de la anarquía, institucionalizaron sus territorios con constituciones y legislaturas, e impulsaron la integración nacional mediante pactos interprovinciales.",
+        capa2Ideal: [
+            "Liderazgo provincial fundado en riqueza, perfil militar y respaldo popular.",
+            "Legitimación popular activa frente al antiguo mito del caudillo manipulador.",
+            "Institucionalización provincial mediante constituciones y Salas de Representantes.",
+            "Pactos interprovinciales estratégicos como cimiento de la unidad nacional."
+        ],
+        capa3Ideal: "Los caudillos de 1820 fueron líderes provinciales legitimados que institucionalizaron sus regiones y sentaron las bases de la unidad nacional mediante pactos interprovinciales."
+    };
+
+    let maxPalabrasC1 = 0;
+
+    function contarPalabras(str) {
+        return str.trim() === '' ? 0 : str.trim().split(/\s+/).length;
+    }
+
+    function contarOraciones(str) {
+        if (str.trim() === '') return 0;
+        const match = str.match(/[^.!?]+[.!?]+/g);
+        return match ? match.length : 1;
+    }
+
+    function initLayout() {
+        // Encabezado
+        const header = document.getElementById('header-container');
+        header.innerHTML = `
+            <h2>${datosSintesis.tituloPagina}</h2>
+            <div class="cn-sub">${datosSintesis.subtitulo} — ${datosSintesis.asignatura} (${datosSintesis.fecha})</div>
+        `;
+
+        // Cargar texto origen y métricas
+        document.getElementById('texto-origen-display').innerText = datosSintesis.textoOrigen;
+        
+        const totalPalabrasOrigen = contarPalabras(datosSintesis.textoOrigen);
+        maxPalabrasC1 = Math.ceil(totalPalabrasOrigen * 0.55);
+
+        document.getElementById('orig-word-count').innerText = `Palabras totales: ${totalPalabrasOrigen}`;
+        document.getElementById('target-layer1-count').innerText = `Límite Capa 1: máx. ${maxPalabrasC1} palabras (50%)`;
+
+        // Renderizar inputs de puntos clave para la Capa 2
+        const bContainer = document.getElementById('bullet-inputs-container');
+        bContainer.innerHTML = '';
+        for (let i = 1; i <= 5; i++) {
+            bContainer.innerHTML += `
+                <div class="bullet-row">
+                    <div class="bullet-num">${i}</div>
+                    <input type="text" class="bullet-input" id="bullet-${i}" placeholder="Punto clave ${i} (opcional si usas menos de 5)">
+                </div>
+            `;
+        }
+
+        // Cargar solución ideal en el panel
+        document.getElementById('ideal-c1').innerText = datosSintesis.capa1Ideal;
+        document.getElementById('ideal-c3').innerText = datosSintesis.capa3Ideal;
+        const ulC2 = document.getElementById('ideal-c2');
+        ulC2.innerHTML = '';
+        datosSintesis.capa2Ideal.forEach(item => {
+            ulC2.innerHTML += `<li>${item}</li>`;
+        });
+
+        // Event listeners para medidores en tiempo real
+        document.getElementById('capa1-input').addEventListener('input', function() {
+            const count = contarPalabras(this.value);
+            const status = document.getElementById('capa1-status');
+            const counter = document.getElementById('capa1-counter');
+            
+            counter.innerText = `${count} palabras introducidas`;
+            if (count > maxPalabrasC1) {
+                status.innerText = "Excede el límite del 50%";
+                status.style.color = "var(--danger)";
+            } else if (count === 0) {
+                status.innerText = "";
+            } else {
+                status.innerText = "Dentro del límite permitido";
+                status.style.color = "var(--success)";
+            }
+        });
+
+        document.getElementById('capa3-input').addEventListener('input', function() {
+            const frases = contarOraciones(this.value);
+            const status = document.getElementById('capa3-status');
+            const counter = document.getElementById('capa3-counter');
+
+            counter.innerText = `${frases} oración(es) detectada(s)`;
+            if (frases > 1) {
+                status.innerText = "¡Atención! Debe ser una sola oración.";
+                status.style.color = "var(--danger)";
+            } else {
+                status.innerText = "Formato correcto (1 oración)";
+                status.style.color = "var(--success)";
+            }
+        });
+    }
+
+    function generarPromptIA(c1Text, userPoints, c3Text) {
+        let listaPuntosFormateada = "";
+        userPoints.forEach((p, idx) => {
+            listaPuntosFormateada += `  - Punto ${idx + 1}: ${p}\n`;
+        });
+
+        if (!listaPuntosFormateada) {
+            listaPuntosFormateada = "  - [No se ingresaron puntos clave]\n";
+        }
+
+        return `Actúa como un tutor académico experto. He realizado un ejercicio de síntesis por niveles de abstracción (Método del Embudo) sobre el siguiente tema:
+
+TEMA: "${datosSintesis.subtitulo}" (${datosSintesis.asignatura})
+
+TEXTO ORIGINAL COMPLETO:
+"${datosSintesis.textoOrigen}"
+
+---
+MI TRABAJO DE SÍNTESIS REALIZADO:
+
+1. Capa 1 (Compresión de ideas al 50%):
+"${c1Text || '[Sin completar]'}"
+
+2. Capa 2 (Esquema de Puntos Clave):
+${listaPuntosFormateada}
+3. Capa 3 (Elevator Pitch - 1 Oración Global):
+"${c3Text || '[Sin completar]'}"
+---
+
+Por favor, evalúa mi síntesis respondiendo los siguientes aspectos:
+1. **Precisión y Fidelidad:** ¿Representa fielmente el texto original sin imprecisiones ni errores conceptuales?
+2. **Capacidad de Abstracción:** ¿Logré filtrar la información de manera progresiva y adecuada en cada nivel?
+3. **Omisiones Importantes:** ¿Omití alguna idea esencial que debió incluirse?
+4. **Calificación:** Dame una calificación del 1 al 10 y una recomendación concreta para mejorar mi síntesis.`;
+    }
+
+    function validarYComparar() {
+        const c1Text = document.getElementById('capa1-input').value;
+        const c3Text = document.getElementById('capa3-input').value;
+        const c1Count = contarPalabras(c1Text);
+        const c3Frases = contarOraciones(c3Text);
+
+        const userPoints = [];
+        for (let i = 1; i <= 5; i++) {
+            const val = document.getElementById(`bullet-${i}`).value.trim();
+            if (val !== '') userPoints.push(val);
+        }
+
+        const panel = document.getElementById('val-panel');
+        const chip = document.getElementById('val-chip');
+        const feedback = document.getElementById('val-feedback');
+
+        panel.style.display = 'block';
+
+        let errores = [];
+
+        if (c1Count === 0) errores.push("La Capa 1 está vacía.");
+        else if (c1Count > maxPalabrasC1) errores.push(`La Capa 1 supera las ${maxPalabrasC1} palabras permitidas (usaste ${c1Count}).`);
+
+        if (userPoints.length === 0) errores.push("Debes completar al menos 1 punto clave en la Capa 2.");
+
+        if (c3Text.trim() === '') errores.push("La Capa 3 (Elevator Pitch) está vacía.");
+        else if (c3Frases > 1) errores.push("El Elevator Pitch debe constar de una sola oración contundente.");
+
+        if (errores.length === 0) {
+            chip.className = "val-status-chip pass";
+            chip.innerText = "¡Límites Cumplidos!";
+            feedback.innerHTML = "<p>Has respetado correctamente las reglas de reducción por capas. Revisa abajo el prompt para enviar a la IA y compara tu trabajo con la síntesis ideal.</p>";
+        } else {
+            chip.className = "val-status-chip warn";
+            chip.innerText = "Ajustes Requeridos";
+            feedback.innerHTML = "<b>Por favor revisa los siguientes puntos antes de enviar:</b><ul style='margin: 6px 0 0; padding-left: 18px;'>" + errores.map(e => `<li>${e}</li>`).join('') + "</ul>";
+        }
+
+        // Generar y cargar el prompt en el área de texto
+        const promptTexto = generarPromptIA(c1Text, userPoints, c3Text);
+        document.getElementById('prompt-ia-display').value = promptTexto;
+
+        panel.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function copiarPromptIA() {
+        const textarea = document.getElementById('prompt-ia-display');
+        textarea.select();
+        textarea.setSelectionRange(0, 99999);
+
+        navigator.clipboard.writeText(textarea.value).then(() => {
+            const btn = document.getElementById('btn-copiar-prompt');
+            const textoOriginal = btn.innerHTML;
+            btn.innerHTML = '✅ ¡Prompt copiado al portapapeles!';
+            btn.style.background = 'var(--success)';
+            
+            setTimeout(() => {
+                btn.innerHTML = textoOriginal;
+                btn.style.background = 'var(--violet)';
+            }, 2500);
+        });
+    }
+
+    window.onload = initLayout;
+</script>
+
+</body>
+</html>

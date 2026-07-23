@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz: Grografía: Modelo agro-exportador.</title>
+  <link rel="stylesheet" href="styles.css">
+
+  <style>
+    :root {
+      --ink: #303249;
+      --muted: #777991;
+      --paper: #fbfbff;
+      --lilac: #eee9ff;
+      --lav: #d9ceff;
+      --mint: #d9f1e8;
+      --line: #e8e6f1;
+      --violet: #7766c9;
+      --peach: #ffdcd2;
+      --accent-green: #4a8a73;
+      --accent-red: #b6666c;
+      --muted-color: var(--muted);
+      --border-color: var(--line);
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: #f7f6fc;
+      color: var(--ink);
+      margin: 0;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font: 600 2em 'Playfair Display', serif;
+      letter-spacing: -0.5px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 650px;
+    }
+
+    .pregunta-card {
+      position: relative;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-top: 4px solid var(--violet);
+      border-radius: 16px;
+      padding: 28px 32px;
+      margin-bottom: 22px;
+      box-shadow: 0 8px 20px rgba(103, 88, 183, 0.06);
+      box-sizing: border-box;
+    }
+
+    .pregunta-texto {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.25em;
+      line-height: 1.35;
+      margin-bottom: 20px;
+    }
+
+    .pregunta-texto .num {
+      font-family: 'DM Mono', monospace;
+      color: var(--violet);
+      margin-right: 8px;
+    }
+
+    .opciones {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .op {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 10px 15px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+
+    .op:hover {
+      background: var(--lilac);
+      border-color: var(--lav);
+    }
+
+    .op-letra {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font: 500 11px 'DM Mono', monospace;
+      background: #fff;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .op.seleccionada {
+      border-color: var(--violet);
+      background: var(--lilac);
+    }
+
+    .op.seleccionada .op-letra {
+      background: var(--violet);
+      border-color: var(--violet);
+      color: white;
+    }
+
+    .op.es-correcta {
+      border-color: #cde9dd;
+      background: var(--mint);
+      color: var(--accent-green);
+      font-weight: 600;
+    }
+
+    .op.es-correcta .op-letra {
+      background: var(--accent-green);
+      border-color: var(--accent-green);
+      color: white;
+    }
+
+    .op.es-incorrecta {
+      border-color: #f5d9d2;
+      background: var(--peach);
+      color: var(--accent-red);
+      text-decoration: line-through;
+    }
+
+    .op.es-incorrecta .op-letra {
+      background: var(--accent-red);
+      border-color: var(--accent-red);
+      color: white;
+    }
+
+    .bloqueado .op {
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .btn-wrap {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+
+    button {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--violet);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 5px 14px rgba(98, 80, 168, 0.2);
+    }
+
+    button:hover {
+      background: #6656b3;
+      transform: translateY(-1px);
+    }
+
+    #resumen {
+      display: none;
+      margin-top: 30px;
+      width: 100%;
+    }
+
+    .resumen-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 14px;
+      border-bottom: 2px solid var(--line);
+      margin-bottom: 25px;
+    }
+
+    .resumen-header h2 {
+      font: 600 1.7em 'Playfair Display', serif;
+      margin: 0;
+    }
+
+    .score-text {
+      font: 600 13px 'DM Mono', monospace;
+      color: var(--violet);
+      background: var(--lilac);
+      padding: 6px 12px;
+      border-radius: 20px;
+    }
+
+    .item-resumen {
+      position: relative;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 22px 26px;
+      margin-bottom: 18px;
+      box-shadow: 0 6px 15px rgba(103, 88, 183, 0.05);
+      box-sizing: border-box;
+    }
+
+    .item-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .item-estado {
+      font: 600 10px 'DM Mono', monospace;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .item-resumen.ok .item-estado {
+      color: var(--accent-green);
+    }
+
+    .item-resumen.mal .item-estado {
+      color: var(--accent-red);
+    }
+
+    .item-num-label {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .item-pregunta-texto {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1em;
+      line-height: 1.35;
+      margin-bottom: 10px;
+    }
+
+    .item-elegida {
+      font-size: 12.5px;
+      color: var(--accent-red);
+      margin-bottom: 4px;
+    }
+
+    .item-correcta-label {
+      font-size: 12.5px;
+      color: var(--accent-green);
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .item-info {
+      font-size: 12.5px;
+      color: var(--muted);
+      line-height: 1.5;
+      padding-top: 12px;
+      border-top: 1px dashed var(--line);
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Evaluación: Grografía: Modelo agro-exportador</h1>
+
+  <div class="container">
+    <div id="quiz"></div>
+
+    <div class="btn-wrap">
+      <button id="btn-ver" style="display: none;" onclick="verResultados()">Ver resultados ➡</button>
+    </div>
+
+    <div id="resumen">
+      <div class="resumen-header">
+        <h2>Resumen de Repaso</h2>
+        <span class="score-text" id="score-text"></span>
+      </div>
+      <div id="items-resumen"></div>
+    </div>
+  </div>
+
+  <script>
+    const PREGUNTAS = [
+      { t: "¿Qué fue el modelo agro-exportador?", ops: ["Un sistema basado en la industrialización pesada", "El motor económico de Argentina basado en la exportación de productos primarios*", "Un modelo centrado en el consumo interno", "Una política de sustitución de importaciones"], info: "Fue el motor económico de Argentina entre 1880 y 1916 basado en la exportación masiva de productos primarios." },
+      { t: "¿Entre qué años se desarrolló principalmente el modelo agro-exportador?", ops: ["1850-1890", "1880-1916*", "1916-1930", "1870-1940"], info: "El modelo agro-exportador fue el motor económico argentino entre 1880 y 1916." },
+      { t: "¿Cómo se integró Argentina al capitalismo internacional durante el modelo agro-exportador?", ops: ["Mediante la industrialización estatal", "Ensamblando tierra local con capital y trabajo europeos*", "A través del cierre comercial", "Reemplazando exportaciones por importaciones"], info: "El modelo combinó tierra abundante con capital y trabajo provenientes de Europa." },
+      { t: "¿Cuánto se multiplicó la economía argentina entre 1880 y 1916?", ops: ["Tres veces", "Cinco veces", "Nueve veces*", "Doce veces"], info: "La economía argentina se multiplicó nueve veces durante el período." },
+      { t: "¿Qué ocurrió con la población entre 1880 y 1916?", ops: ["Se duplicó", "Se triplicó*", "Se cuadruplicó", "Se mantuvo estable"], info: "Mientras la economía crecía nueve veces, la población solo se triplicaba." },
+      { t: "¿Cuál fue la tasa anual de crecimiento del PBI durante el modelo agro-exportador?", ops: ["3%", "4%", "6%*", "8%"], info: "El Producto Bruto Interno creció a una tasa muy alta del 6% anual." },
+      { t: "¿A qué tasa anual creció el producto per cápita?", ops: ["1%", "2%", "3%*", "6%"], info: "El producto per cápita aumentó un 3% anual." },
+      { t: "¿Entre qué años ocurrió la fiebre lanar?", ops: ["1820-1860", "1840-1880*", "1880-1916", "1900-1920"], info: "La fiebre lanar ocurrió entre 1840 y 1880." },
+      { t: "¿Por qué fue importante la fiebre lanar?", ops: ["Porque impulsó la industria pesada", "Porque sentó las bases del crecimiento económico*", "Porque eliminó la ganadería", "Porque redujo las exportaciones"], info: "Fue fundamental porque sentó las bases del crecimiento económico." },
+      { t: "¿Qué raza de ovejas fue clave durante la fiebre lanar?", ops: ["Corriedale", "Lincoln", "Merino*", "Hampshire"], info: "La lana de ovejas raza Merino se convirtió en el principal bien exportable." },
+      { t: "¿Cuál fue el principal bien exportable antes del auge de cereales y carne vacuna?", ops: ["Trigo", "Maíz", "Lana*", "Carne refrigerada"], info: "La lana fue el principal bien exportable de manera sostenida." },
+      { t: "¿Qué desplazó a las ovejas hacia el sur del país?", ops: ["La minería", "Los cultivos y las vacas de raza*", "La industria", "Los ferrocarriles"], info: "Los cultivos y las vacas de raza desplazaron a las ovejas hacia el sur." },
+      { t: "¿Qué fue el doble movimiento de fronteras?", ops: ["Dos guerras civiles", "Una frontera económica y una marítima", "Una frontera política/militar seguida por una productiva*", "La expansión de dos provincias"], info: "Primero se apropiaron tierras vírgenes y luego fueron pobladas y explotadas." },
+      { t: "¿Qué efecto tuvo el doble movimiento de fronteras?", ops: ["Redujo la producción", "Modeló el paisaje de las pampas*", "Eliminó la ganadería", "Provocó migración europea"], info: "Modeló el paisaje de las pampas con características que prevalecen hasta hoy." },
+      { t: "¿Qué producto se convirtió en la nueva estrella de las exportaciones a comienzos del siglo XX?", ops: ["La lana", "El trigo", "La carne refrigerada*", "El cuero"], info: "La carne refrigerada pasó a ser la nueva estrella exportadora." },
+      { t: "¿Qué ventaja tenía la carne refrigerada sobre la congelada?", ops: ["Era más barata", "Se producía más rápido", "Conservaba sabor y valor nutritivo*", "No requería frigoríficos"], info: "Superó al congelado porque este quitaba sabor y valor nutritivo." },
+      { t: "¿Quiénes implementaron las técnicas modernas de refrigeración?", ops: ["Capitales franceses", "Capitales ingleses", "Capitales norteamericanos*", "Capitales brasileños"], info: "Las técnicas modernas fueron implementadas por capitales norteamericanos." },
+      { t: "¿Cuántas toneladas de carne vacuna se exportaban aproximadamente en 1914?", ops: ["10.000", "20.000", "36.897*", "50.000"], info: "Las exportaciones alcanzaron casi 36.897 toneladas en 1914." },
+      { t: "¿Cuál era uno de los fines principales del Estado argentino?", ops: ["Reducir exportaciones", "Consolidar el Estado*", "Eliminar la inmigración", "Nacionalizar todas las tierras"], info: "El objetivo era consolidar el Estado y ensamblar recursos con el mercado mundial." },
+      { t: "¿Qué buscaba Argentina ocupar en América del Sur?", ops: ["El lugar de Europa", "El lugar que EE.UU. ocupaba en el norte*", "El liderazgo africano", "La posición de Asia"], info: "Se buscaba posicionar a Argentina como EE.UU. en América del Norte." },
+      { t: "¿Cómo se definía al ferrocarril dentro del modelo?", ops: ["La columna vertebral militar", "El sistema nervioso del comercio*", "La frontera productiva", "El motor industrial"], info: "El ferrocarril era considerado el sistema nervioso del comercio." },
+      { t: "¿Qué permitió el ferrocarril respecto de los cereales?", ops: ["Reducir su producción", "Exportarlos a gran escala*", "Importarlos desde Europa", "Industrializarlos"], info: "Permitió la exportación masiva de cereales." },
+      { t: "¿Cuántos kilómetros de red ferroviaria había en 1880?", ops: ["1.000 km", "2.500 km*", "10.000 km", "34.500 km"], info: "La red ferroviaria tenía 2.500 km en 1880." },
+      { t: "¿Cuántos kilómetros de red ferroviaria alcanzó Argentina en 1916?", ops: ["15.000 km", "20.000 km", "34.500 km*", "50.000 km"], info: "La red llegó a 34.500 km en 1916." },
+      { t: "¿Por qué el ferrocarril atraía inversiones extranjeras?", ops: ["Por los bajos salarios", "Porque el Estado garantizaba ganancias*", "Porque no existían impuestos", "Porque era propiedad europea"], info: "El Estado garantizaba una ganancia sobre el capital invertido." },
+      { t: "¿Qué papel cumplió la inmigración en el modelo?", ops: ["Reducir la población", "Ser el motor humano del sistema*", "Reemplazar al ferrocarril", "Disminuir la producción"], info: "La inmigración solucionó la falta de mano de obra." },
+      { t: "¿Qué continente aportó la mayor parte de los inmigrantes?", ops: ["Asia", "África", "Europa*", "Oceanía"], info: "Europa proveyó los trabajadores que Argentina necesitaba." },
+      { t: "¿Por qué eran atraídos los inmigrantes a Argentina?", ops: ["Por guerras civiles", "Por salarios más altos y movilidad social*", "Por menor producción agrícola", "Por el clima europeo"], info: "Los inmigrantes buscaban mejores salarios y oportunidades." },
+      { t: "¿Cuál fue el factor de producción abundante en Argentina?", ops: ["Trabajo", "Capital", "Tierra*", "Tecnología"], info: "La tierra era el factor de producción abundante." },
+      { t: "¿Qué características de la pampa húmeda favorecieron el modelo?", ops: ["Clima frío y montañoso", "Clima óptimo y calidad del suelo*", "Abundancia de minerales", "Escasez de lluvias"], info: "El clima y el suelo permitieron producir bienes muy demandados." },
+      { t: "¿Qué permitió la calidad de las pampas argentinas?", ops: ["Reducir exportaciones", "Ingresar a la élite del capitalismo internacional*", "Eliminar la inmigración", "Cerrar mercados"], info: "Facilitó la inserción de Argentina en la élite del capitalismo internacional." },
+      { t: "¿Cuántos engranajes principales tenía la arquitectura del sistema productivo?", ops: ["Dos", "Tres*", "Cuatro", "Cinco"], info: "El sistema se basó en tres engranajes principales." },
+      { t: "¿Cuál de estos NO era uno de los tres engranajes principales?", ops: ["Tierra", "Trabajo", "Capital", "Industria*"], info: "Los tres engranajes eran tierra, trabajo y capital." },
+      { t: "¿Quién controlaba los engranajes del sistema productivo?", ops: ["Los inmigrantes", "El Estado Central*", "Los chacareros", "Los frigoríficos"], info: "Los engranajes funcionaban bajo el control del Estado Central." },
+      { t: "¿De dónde provenía el capital del sistema productivo?", ops: ["De exportaciones asiáticas", "De excedentes de la industrialización europea*", "De impuestos locales únicamente", "De la minería"], info: "El capital provenía de los excedentes generados por Europa industrializada." },
+      { t: "¿Qué garantizaba el Estado tras las guerras civiles?", ops: ["Expansión militar", "Orden político y jurídico*", "Industrialización obligatoria", "Nuevas provincias"], info: "El Estado protegía vidas, propiedades y emprendimientos." },
+      { t: "¿Cómo impulsó el Estado las inversiones extranjeras?", ops: ["Eliminando el comercio", "Garantizando ganancias con sus ingresos*", "Nacionalizando empresas", "Reduciendo la producción"], info: "Garantizó ganancias y un marco legal para el comercio." },
+      { t: "¿Qué fue la estancia mixta?", ops: ["Una estancia exclusivamente ganadera", "La combinación de agricultura y ganadería*", "Un sistema ferroviario", "Una colonia inmigrante"], info: "La estancia mixta integró agricultura y ganadería en un mismo establecimiento." },
+      { t: "¿Qué logró la estancia mixta?", ops: ["Reducir exportaciones", "Elevar la producción y convertir a Argentina en el granero del mundo*", "Eliminar la agricultura", "Disminuir el valor exportado"], info: "La asociación eficiente elevó la producción y fortaleció las exportaciones." },
+      { t: "¿Cuánto valían las exportaciones agrícolas en 1880?", ops: ["450.000 pesos oro*", "4.500.000 pesos oro", "45.000 pesos oro", "300.000.000 pesos oro"], info: "En 1880 las exportaciones agrícolas alcanzaban 450.000 pesos oro." },
+      { t: "¿Cuánto valían las exportaciones agrícolas en 1913?", ops: ["30.000.000 pesos oro", "100.000.000 pesos oro", "300.000.000 pesos oro*", "450.000 pesos oro"], info: "En 1913 alcanzaban los 300.000.000 de pesos oro." },
+      { t: "¿Qué porcentaje del producto total representaba la industria en 1881?", ops: ["10,7%*", "18,3%", "27,8%", "6%"], info: "En 1881 la industria representaba el 10,7% del producto total." },
+      { t: "¿Qué porcentaje representaba la industria en 1916?", ops: ["10,7%", "18,3%", "27,8%*", "30,5%"], info: "Para 1916 la industria alcanzó el 27,8%." },
+      { t: "¿A qué sectores superó la industria en 1916?", ops: ["Minería y comercio", "Agricultura y ganadería*", "Ferrocarriles y puertos", "Bancos y seguros"], info: "Superó individualmente a agricultura y ganadería, ambas con 18,3%." },
+      { t: "¿Cómo se organizaba la estructura social de la pampa húmeda?", ops: ["En dos niveles", "En una pirámide de tres niveles*", "En cuatro clases sociales", "Sin jerarquías"], info: "La estructura social era una pirámide de tres niveles." },
+      { t: "¿Quiénes ocupaban el vértice de la estructura social?", ops: ["Jornaleros", "Chacareros", "Grandes propietarios*", "Inmigrantes"], info: "Los grandes propietarios eran dueños de vastas extensiones de tierra." },
+      { t: "¿Qué caracterizaba al chacarero?", ops: ["Era dueño de grandes campos", "Arrendaba la tierra para explotarla*", "Trabajaba por salario estacional", "Era exportador de carne"], info: "El chacarero no poseía la tierra; la arrendaba." },
+      { t: "¿Qué era el jornalero o bracero?", ops: ["Un propietario rural", "Un arrendatario", "Un trabajador asalariado del campo*", "Un exportador"], info: "Trabajaba a cambio de un salario, generalmente estacional." },
+      { t: "¿Qué tipo de trabajo realizaba normalmente el jornalero?", ops: ["Industrial", "Administrativo", "Estacional*", "Minero"], info: "Generalmente trabajaba bajo un régimen estacional." },
+      { t: "¿Quién se ubicaba al inicio de la cadena ganadera?", ops: ["Invernador", "Criador*", "Jornalero", "Chacarero"], info: "El criador se dedicaba a la cría del ganado hasta cierta edad." },
+      { t: "¿Qué tierras utilizaba habitualmente el criador?", ops: ["Las mejores tierras", "Tierras menos productivas o con peores pastos*", "Tierras urbanas", "Tierras industriales"], info: "El criador trabajaba en tierras menos productivas." },
+      { t: "¿Quién obtenía menor ganancia en el negocio ganadero?", ops: ["Invernador", "Criador*", "Propietario extranjero", "Frigorífico"], info: "El criador era quien menos ganaba en la cadena." },
+      { t: "¿Quién compraba el ganado para engordarlo y venderlo?", ops: ["Chacarero", "Criador", "Invernador*", "Jornalero"], info: "El invernador compraba el ganado al criador para el engorde." },
+      { t: "¿Quién poseía las mejores tierras de la Pampa?", ops: ["Jornaleros", "Criadores", "Invernadores*", "Chacareros"], info: "Los invernadores poseían las mejores tierras." },
+      { t: "¿Quién obtenía el mayor margen de rentabilidad en la cadena ganadera?", ops: ["Criador", "Jornalero", "Invernador*", "Chacarero"], info: "El invernador se quedaba con el mayor margen de rentabilidad." }
+    ];
+
+    const letras = ["A", "B", "C", "D"];
+    let respuestas = {};
+    let preguntas = [];
+
+    function shuffle(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function render() {
+      preguntas = shuffle(PREGUNTAS).map(p => ({
+        ...p,
+        ops: shuffle(p.ops.map(o => ({ texto: o.replace("*", ""), correcta: o.includes("*") })))
+      }));
+
+      const container = document.getElementById("quiz");
+      preguntas.forEach((p, qi) => {
+        const div = document.createElement("div");
+        div.className = "pregunta-card";
+        div.id = "p" + qi;
+
+        const texto = document.createElement("div");
+        texto.className = "pregunta-texto";
+        texto.innerHTML = `<span class="num">${qi + 1}.</span>${p.t.replace(/^\d+\.\s*/, '')}`;
+        div.appendChild(texto);
+
+        const opsWrap = document.createElement("div");
+        opsWrap.className = "opciones";
+        p.ops.forEach((op, i) => {
+          const el = document.createElement("div");
+          el.className = "op";
+          el.id = `op-${qi}-${i}`;
+          el.innerHTML = `<span class="op-letra">${letras[i]}</span><span>${op.texto}</span>`;
+          el.addEventListener("click", () => seleccionar(qi, i));
+          opsWrap.appendChild(el);
+        });
+
+        div.appendChild(opsWrap);
+        container.appendChild(div);
+      });
+    }
+
+    function seleccionar(qi, opIdx) {
+      if (document.getElementById("p" + qi).classList.contains("bloqueado")) return;
+      if (respuestas[qi] !== undefined) {
+        document.getElementById(`op-${qi}-${respuestas[qi]}`).classList.remove("seleccionada");
+      }
+      respuestas[qi] = opIdx;
+      document.getElementById(`op-${qi}-${opIdx}`).classList.add("seleccionada");
+
+      if (Object.keys(respuestas).length === preguntas.length) {
+        document.getElementById("btn-ver").style.display = "inline-block";
+      }
+    }
+
+    function verResultados() {
+      let correctas = 0;
+      const itemsEl = document.getElementById("items-resumen");
+      itemsEl.innerHTML = "";
+
+      preguntas.forEach((p, qi) => {
+        const div = document.getElementById("p" + qi);
+        div.classList.add("bloqueado");
+
+        const elegida = respuestas[qi];
+        const esCorrecta = p.ops[elegida].correcta;
+        const correctaIdx = p.ops.findIndex(o => o.correcta);
+        if (esCorrecta) correctas++;
+
+        p.ops.forEach((_, i) => {
+          const el = document.getElementById(`op-${qi}-${i}`);
+          el.classList.remove("seleccionada");
+          if (i === correctaIdx) {
+            el.classList.add("es-correcta");
+          } else if (i === elegida && !esCorrecta) {
+            el.classList.add("es-incorrecta");
+          }
+        });
+
+        const item = document.createElement("div");
+        item.className = `item-resumen ${esCorrecta ? "ok" : "mal"}`;
+        item.innerHTML = `
+                    <div class="item-top">
+                        <div class="item-estado">${esCorrecta ? "Correcto" : "Incorrecto"}</div>
+                        <div class="item-num-label">Pregunta ${qi + 1}</div>
+                    </div>
+                    <div class="item-pregunta-texto">${p.t.replace(/^\d+\.\s*/, '')}</div>
+                    ${!esCorrecta ? `<div class="item-elegida">Tu respuesta: ${p.ops[elegida].texto}</div>` : ""}
+                    <div class="item-correcta-label">Respuesta correcta: ${p.ops[correctaIdx].texto}</div>
+                    <div class="item-info">${p.info}</div>
+                `;
+        itemsEl.appendChild(item);
+      });
+
+      const pct = Math.round(correctas / preguntas.length * 100);
+      document.getElementById("score-text").textContent = `${correctas} de ${preguntas.length} correctas · ${pct}%`;
+      document.getElementById("btn-ver").style.display = "none";
+
+      const resumen = document.getElementById("resumen");
+      resumen.style.display = "block";
+
+      setTimeout(() => resumen.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    }
+
+    window.onload = render;
+  </script>
+</body>
+
+</html>
