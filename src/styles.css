@@ -635,7 +635,7 @@
 .fy-keypoint:last-child{margin-bottom:0}
 .fy-keypoint-title{font:600 1.05em 'Playfair Display',serif;color:var(--violet);margin-bottom:4px}
 .fy-keypoint-desc{font-size:13px;color:var(--muted);line-height:1.5}
-.fy-keypoint-desc strong{color:var(--ink);font-weight:600;background:rgba(217,206,255,.3);padding:0 4px;border-radius:3px};
+.fy-keypoint-desc strong{color:var(--ink);font-weight:600;background:rgba(217,206,255,.3);padding:0 4px;border-radius:3px}
 /* ============================================================
    ACTIVE RECALL VIEW  (rc-*)
    Estética idéntica al FlashCards.html original.
