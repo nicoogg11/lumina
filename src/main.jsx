@@ -2,15 +2,15 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
 
-class ErrorBoundary extends React.Component {
-  constructor(props) { super(props); this.state = { hasError: false, message: '' } }
-  static getDerivedStateFromError(error) { return { hasError: true, message: error?.message || 'Ocurrió un error inesperado.' } }
-  componentDidCatch(error, info) { console.error('Lúmina atrapó un error al renderizar:', error, info) }
+class LimiteError extends React.Component {
+  constructor(props) { super(props); this.state = { tieneError: false, mensaje: '' } }
+  static getDerivedStateFromError(error) { return { tieneError: true, mensaje: error?.mensaje || 'Ocurrió un error inesperado.' } }
+  componentDidCatch(error, informacion) { console.error('Lúmina atrapó un error al renderizar:', error, informacion) }
   render() {
-    if (this.state.hasError) {
-      return typeof this.props.fallback === 'function' ? this.props.fallback(this.state.message) : this.props.fallback;
+    if (this.state.tieneError) {
+      return typeof this.props.alternativa === 'function' ? this.props.alternativa(this.state.mensaje) : this.props.alternativa;
     }
-    return this.props.children;
+    return this.props.hijos;
   }
 }
 
@@ -37,14 +37,14 @@ const PROMPT_FLASHCARDS = `Actuá como un extractor de datos preciso. Tu única 
 
 const PROMPT_TEST = `Sos un profesor experto creando un examen de práctica. Leé estos apuntes con atención y creá la mayor cantidad posible de preguntas de opción múltiple, cubriendo TODOS los conceptos, definiciones, fechas, nombres, procesos y datos que aparezcan. No omitas nada importante y no repitas el mismo concepto en dos preguntas distintas. Devolveme únicamente esto, en texto plano y sin bloques \`\`\` de markdown, sin texto antes ni después:
 const PREGUNTAS = [
-{ t: "¿Pregunta? ", ops: [ "Opción A ", "Opción correcta* ", "Opción C ", "Opción D "], info: "Explicación breve usando las palabras de los apuntes. " },
+{ t: "¿Pregunta? ", ops: [ "Opción A ", "Opción correcta* ", "Opción C ", "Opción D "], informacion: "Explicación breve usando las palabras de los apuntes. " },
 ];
 Reglas estrictas:
 La opción correcta lleva * pegado al final, sin espacio.
 Exactamente 4 opciones por pregunta.
 Las opciones incorrectas deben ser plausibles (mismo tipo de dato, época o categoría que la correcta), nunca obvias ni absurdas.
 Todas las opciones de una misma pregunta deben tener una extensión similar entre sí, para que la correcta no se note por ser más larga o más detallada que el resto.
-"info" debe explicar con las palabras de los apuntes, sin inventar ni agregar datos que no estén en el texto.
+"informacion" debe explicar con las palabras de los apuntes, sin inventar ni agregar datos que no estén en el texto.
 Variá el tipo de pregunta: definiciones, ejemplos, comparaciones, fechas, causas, consecuencias.
 Comillas internas escapadas correctamente (") para que el JavaScript sea válido.
 Solo el código JavaScript, nada más.`
@@ -287,14 +287,14 @@ const decodeTextFromBase64 = (base64) => {
     return ''
   }
 }
-const cleanAIOutput = (text) => {
-  if (!text) return text
-  let cleaned = text.trim()
+const cleanAIOutput = (texto) => {
+  if (!texto) return texto
+  let cleaned = texto.trim()
   // Remove chain-of-thought blocks (DeepSeek, Nemotron, QwQ style)
   cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
   cleaned = cleaned.replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, '').trim()
-  // If there's a fenced code block anywhere in the response, extract its content.
-  // This handles cases where the AI adds preamble text before the ```javascript block.
+  // If there's a fenced code block anywhere in the response, extract its contenido.
+  // This handles cases where the AI adds preamble texto before the ```javascript block.
   const fenceMatch = cleaned.match(/```[a-zA-Z0-9]*\r?\n?([\s\S]*?)\r?\n?```/)
   if (fenceMatch) {
     cleaned = fenceMatch[1].trim()
@@ -308,7 +308,7 @@ const cleanAIOutput = (text) => {
   return cleaned
 }
 
-// Extracts the first JS variable declaration from a string that may have preamble text.
+// Extracts the first JS variable declaration from a string that may have preamble texto.
 const extractJSBlock = (code, varName) => {
   const declIndex = code.indexOf(`const ${varName}`)
   if (declIndex !== -1) return code.slice(declIndex)
@@ -318,13 +318,13 @@ const extractJSBlock = (code, varName) => {
   }
   const re = new RegExp(`${varName}\\s*=\\s*[\\[\\{]`)
   const m = re.exec(code)
-  if (m) return `const ${code.slice(m.index)}`
+  if (m) return `const ${code.slice(m.indice)}`
   return code
 }
 
 // Normalizes alternative datosMapa formats that AI models sometimes generate.
 // Strategy: eval the JS first (handles all valid JS syntax), then normalize the
-// resulting object structure. Falls back to text-level fixes if eval fails.
+// resulting object structure. Falls back to texto-nivel fixes if eval fails.
 const normalizeMindMapCode = (code) => {
   if (!code.includes('datosMapa')) return code
 
@@ -353,7 +353,7 @@ const normalizeMindMapCode = (code) => {
     return node
   }
 
-  // Step 1: try to eval the code as-is (or with minor text fixes) to get a live object
+  // Step 1: try to eval the code as-is (or with minor texto fixes) to get a live object
   const tryEvalNormalize = (src) => {
     try {
       // Strip pattern A: { "Text" } invalid shorthand → { nombre: "Text" }
@@ -367,7 +367,7 @@ const normalizeMindMapCode = (code) => {
     } catch { return null }
   }
 
-  // Step 2: text-level fallbacks — remove trailing commas, JS comments, then retry
+  // Step 2: texto-nivel fallbacks — remove trailing commas, JS comments, then retry
   const tryTextFix = (src) => {
     let s = src
     // Remove single-line JS comments (avoid breaking URLs)
@@ -440,7 +440,7 @@ const repairJSCode = (raw, varName) => {
     // Si termina en string abierto, cerrar
     const quoteCount = (fixed.match(/(?<!\\)"/g) || []).length
     if (quoteCount % 2 !== 0) fixed += '"'
-    for (const open of [...stack].reverse()) fixed += open === '{' ? '}' : ']'
+    for (const abierto of [...stack].reverse()) fixed += abierto === '{' ? '}' : ']'
     if (!fixed.trimEnd().endsWith(';')) fixed = fixed.trimEnd() + ';'
     return fixed
   }
@@ -469,10 +469,10 @@ const repairJSCode = (raw, varName) => {
 
   return s
 }
-const LIBRARY_DB = 'lumina-library', LIBRARY_STORE = 'materials'
+const LIBRARY_DB = 'lumina-library', LIBRARY_STORE = 'materiales'
 function openLibraryDB() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(LIBRARY_DB, 1);
+    const req = indexedDB.abierto(LIBRARY_DB, 1);
     req.onupgradeneeded = () => {
       if (!req.result.objectStoreNames.contains(LIBRARY_STORE)) {
         req.result.createObjectStore(LIBRARY_STORE, { keyPath: 'id' });
@@ -518,7 +518,7 @@ const PRIORIDADES = {
 const XP_POR_NIVEL = 100
 const BONUS_ENFOQUE = 1.5
 
-// Plantillas predefinidas de auto-to-do list para estudiantes.
+// Plantillas predefinidas de auto-to-do lista para estudiantes.
 // Cada plantilla agrega un set de tareas ya priorizadas; el usuario puede
 // sumar sus propias tareas específicas después con el formulario normal.
 const PLANTILLAS_TODO = [
@@ -527,10 +527,10 @@ const PLANTILLAS_TODO = [
     icon: '📘',
     label: 'Antes de un examen',
     tareas: [
-      { text: 'Repasar el resumen general del tema', prioridad: 'alta' },
-      { text: 'Resolver ejercicios o preguntas de práctica', prioridad: 'alta' },
-      { text: 'Anotar y resolver mis dudas pendientes', prioridad: 'media' },
-      { text: 'Preparar los materiales para el día del examen', prioridad: 'normal' },
+      { texto: 'Repasar el resumen general del tema', prioridad: 'alta' },
+      { texto: 'Resolver ejercicios o preguntas de práctica', prioridad: 'alta' },
+      { texto: 'Anotar y resolver mis dudas pendientes', prioridad: 'media' },
+      { texto: 'Preparar los materiales para el día del examen', prioridad: 'normal' },
     ]
   },
   {
@@ -538,9 +538,9 @@ const PLANTILLAS_TODO = [
     icon: '🗓️',
     label: 'Rutina de estudio diaria',
     tareas: [
-      { text: 'Revisar los apuntes de la clase de hoy', prioridad: 'media' },
-      { text: 'Hacer una sesión de repaso activo', prioridad: 'media' },
-      { text: 'Dejar planificado qué voy a estudiar mañana', prioridad: 'normal' },
+      { texto: 'Revisar los apuntes de la clase de hoy', prioridad: 'media' },
+      { texto: 'Hacer una sesión de repaso activo', prioridad: 'media' },
+      { texto: 'Dejar planificado qué voy a estudiar mañana', prioridad: 'normal' },
     ]
   },
   {
@@ -548,82 +548,82 @@ const PLANTILLAS_TODO = [
     icon: '📄',
     label: 'Entrega de trabajo práctico',
     tareas: [
-      { text: 'Definir la consigna y estructura del trabajo', prioridad: 'alta' },
-      { text: 'Redactar el primer borrador', prioridad: 'alta' },
-      { text: 'Revisar formato, ortografía y citas', prioridad: 'media' },
-      { text: 'Entregar antes de la fecha límite', prioridad: 'alta' },
+      { texto: 'Definir la consigna y estructura del trabajo', prioridad: 'alta' },
+      { texto: 'Redactar el primer borrador', prioridad: 'alta' },
+      { texto: 'Revisar formato, ortografía y citas', prioridad: 'media' },
+      { texto: 'Entregar antes de la fecha límite', prioridad: 'alta' },
     ]
   },
 ]
 
 function App() {
-  const [streak, setStreak] = useState(() => parseInt(localStorage.getItem('lumina-streak') || '0'));
-  const [forest, setForest] = useState(() => { try { return JSON.parse(localStorage.getItem('lumina-forest') || '[]') } catch { return [] } });
-  const [active, setActive] = useState('mind'), [room, setRoom] = useState(false), [tab, setTab] = useState('Inicio')
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('lumina-gemini-key') || '')
-  const [aiProvider, setAiProvider] = useState(() => localStorage.getItem('lumina-ai-provider') || 'gemini')
-  const [aiModel, setAiModel] = useState(() => localStorage.getItem('lumina-ai-model') || AI_MODELS.gemini[0].id)
-  const [aiBaseUrl, setAiBaseUrl] = useState(() => localStorage.getItem('lumina-ai-base-url') || '')
-  const [keyInput, setKeyInput] = useState(apiKey), [keyOpen, setKeyOpen] = useState(false), [notice, setNotice] = useState('')
-  const [providerInput, setProviderInput] = useState(aiProvider)
-  const [modelInput, setModelInput] = useState(aiModel)
-  const [baseUrlInput, setBaseUrlInput] = useState(aiBaseUrl)
-  const [localModels, setLocalModels] = useState([])
-  const [localModelsFetching, setLocalModelsFetching] = useState(false)
-  const [localModelsError, setLocalModelsError] = useState('')
-  const [materias, setMaterias] = useState([])
-  const [materiaId, setMateriaId] = useState(null)
-  const [materiaModalOpen, setMateriaModalOpen] = useState(false)
-  const [materiaToRename, setMateriaToRename] = useState(null)
-  const [studyPickerOpen, setStudyPickerOpen] = useState(false)
-  const [pendingMethod, setPendingMethod] = useState(null)
-  const [materials, setMaterials] = useState([]), [activeMaterial, setActiveMaterial] = useState(null)
-  const [previewMaterial, setPreviewMaterial] = useState(null)
-  const [studyMinutes, setStudyMinutes] = useState(() => parseInt(localStorage.getItem('lumina-study-minutes') || '45'))
-  const [shortBreakMinutes, setShortBreakMinutes] = useState(() => parseInt(localStorage.getItem('lumina-short-break') || '10'))
-  const [longBreakMinutes, setLongBreakMinutes] = useState(() => parseInt(localStorage.getItem('lumina-long-break') || '25'))
-  const [sessionsUntilLongBreak, setSessionsUntilLongBreak] = useState(() => parseInt(localStorage.getItem('lumina-sessions-until-long') || '4'))
-  const [phase, setPhase] = useState('focus')
-  const [completedFocusSessions, setCompletedFocusSessions] = useState(() => parseInt(localStorage.getItem('lumina-completed-sessions') || '0'))
-  const [seconds, setSeconds] = useState(() => parseInt(localStorage.getItem('lumina-study-minutes') || '45') * 60)
-  const [running, setRunning] = useState(false), [aiResult, setAiResult] = useState('')
-  const [previewData, setPreviewData] = useState(null)
-  const [previewError, setPreviewError] = useState('')
-  const [previewVersion, setPreviewVersion] = useState(0)
-  const [loading, setLoading] = useState(false)
-  const [streamText, setStreamText] = useState('')
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const [settingsInput, setSettingsInput] = useState({ study: studyMinutes, short: shortBreakMinutes, long: longBreakMinutes, cycle: sessionsUntilLongBreak })
+  const [racha, establecerRacha] = useState(() => parseInt(localStorage.getItem('lumina-racha') || '0'));
+  const [bosque, establecerBosque] = useState(() => { try { return JSON.parse(localStorage.getItem('lumina-bosque') || '[]') } catch { return [] } });
+  const [activo, establecerActivo] = useState('mind'), [sala, establecerSala] = useState(false), [pestanha, establecerPestanha] = useState('Inicio')
+  const [claveApi, establecerClaveApi] = useState(() => localStorage.getItem('lumina-gemini-key') || '')
+  const [proveedorIA, establecerProveedorIA] = useState(() => localStorage.getItem('lumina-ai-provider') || 'gemini')
+  const [modeloIA, establecerModeloIA] = useState(() => localStorage.getItem('lumina-ai-model') || AI_MODELS.gemini[0].id)
+  const [urlBaseIA, establecerUrlBaseIA] = useState(() => localStorage.getItem('lumina-ai-base-url') || '')
+  const [entradaClave, establecerEntradaClave] = useState(claveApi), [claveAbierta, establecerClaveAbierta] = useState(false), [aviso, establecerAviso] = useState('')
+  const [entradaProveedor, establecerEntradaProveedor] = useState(proveedorIA)
+  const [entradaModelo, establecerEntradaModelo] = useState(modeloIA)
+  const [entradaUrlBase, establecerEntradaUrlBase] = useState(urlBaseIA)
+  const [modelosLocales, establecerModelosLocales] = useState([])
+  const [modelosLocalesObteniendo, establecerModelosLocalesObteniendo] = useState(false)
+  const [modelosLocalesError, establecerModelosLocalesError] = useState('')
+  const [materias, establecerMaterias] = useState([])
+  const [materiaId, establecerMateriaId] = useState(null)
+  const [materiaModalAbierto, establecerMateriaModalAbierto] = useState(false)
+  const [materiaARenombrar, establecerMateriaARenombrar] = useState(null)
+  const [selectorEstudioAbierto, establecerSelectorEstudioAbierto] = useState(false)
+  const [metodoPendiente, establecerMetodoPendiente] = useState(null)
+  const [materiales, establecerMateriales] = useState([]), [materialActivo, establecerMaterialActivo] = useState(null)
+  const [vistaPreviaMaterial, establecerVistaPreviaMaterial] = useState(null)
+  const [minutosEstudio, establecerMinutosEstudio] = useState(() => parseInt(localStorage.getItem('lumina-study-minutes') || '45'))
+  const [minutosDescansoCorto, establecerMinutosDescansoCorto] = useState(() => parseInt(localStorage.getItem('lumina-short-break') || '10'))
+  const [minutosDescansoLargo, establecerMinutosDescansoLargo] = useState(() => parseInt(localStorage.getItem('lumina-long-break') || '25'))
+  const [sesionesHastaDescansoLargo, establecerSesionesHastaDescansoLargo] = useState(() => parseInt(localStorage.getItem('lumina-sessions-until-long') || '4'))
+  const [fase, establecerFase] = useState('focus')
+  const [sesionesEnfoqueCompletadas, establecerSesionesEnfoqueCompletadas] = useState(() => parseInt(localStorage.getItem('lumina-completed-sessions') || '0'))
+  const [segundos, establecerSegundos] = useState(() => parseInt(localStorage.getItem('lumina-study-minutes') || '45') * 60)
+  const [running, setRunning] = useState(false), [resultadoIA, establecerResultadoIA] = useState('')
+  const [datosVistaPrevia, establecerDatosVistaPrevia] = useState(null)
+  const [errorVistaPrevia, establecerErrorVistaPrevia] = useState('')
+  const [versionVistaPrevia, establecerVersionVistaPrevia] = useState(0)
+  const [cargando, establecerCargando] = useState(false)
+  const [textoFlujo, establecerTextoFlujo] = useState('')
+  const [configuracionAbierta, establecerConfiguracionAbierta] = useState(false)
+  const [settingsInput, setSettingsInput] = useState({ study: minutosEstudio, short: minutosDescansoCorto, long: minutosDescansoLargo, cycle: sesionesHastaDescansoLargo })
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.matchMedia('(max-width: 750px)').matches : false)
-  const [theme, setTheme] = useState(() => {
+  const [tema, establecerTema] = useState(() => {
     try {
-      const saved = localStorage.getItem('lumina-theme');
+      const saved = localStorage.getItem('lumina-tema');
       if (saved === 'light' || saved === 'dark') return saved;
     } catch {}
     return (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
   })
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    try { localStorage.setItem('lumina-theme', theme) } catch {}
-  }, [theme]);
-  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
+    document.documentElement.setAttribute('datos-tema', tema);
+    try { localStorage.setItem('lumina-tema', tema) } catch {}
+  }, [tema]);
+  const toggleTheme = () => establecerTema(t => t === 'dark' ? 'light' : 'dark')
   const resultCacheKey = (material, methodId) => `lumina-result-${material.id}-${methodId}`
   const previewCacheKey = (material, methodId) => `lumina-preview-${material.id}-${methodId}`
   const materiasKey = () => `lumina-materias`
-  const currentMateriaKey = () => `lumina-current-materia`
-  const activeMaterialKey = (mid) => `lumina-active-material-id-${mid}`
+  const currentMateriaKey = () => `lumina-actual-materia`
+  const activeMaterialKey = (mid) => `lumina-activo-material-id-${mid}`
 
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(materiasKey()) || '[]');
-      setMaterias(saved);
-    } catch { setMaterias([]) }
-    setMateriaId(localStorage.getItem(currentMateriaKey()) || null);
+      establecerMaterias(saved);
+    } catch { establecerMaterias([]) }
+    establecerMateriaId(localStorage.getItem(currentMateriaKey()) || null);
   }, []);
 
   const chooseMateria = (id) => {
-    setMateriaId(id);
+    establecerMateriaId(id);
     try {
       if (id) localStorage.setItem(currentMateriaKey(), id);
       else localStorage.removeItem(currentMateriaKey());
@@ -632,13 +632,13 @@ function App() {
   const createMateria = (nombre) => {
     const id = Math.random().toString(36).substr(2, 9);
     const next = [...materias, { id, nombre }];
-    setMaterias(next);
+    establecerMaterias(next);
     try { localStorage.setItem(materiasKey(), JSON.stringify(next)) } catch {}
     chooseMateria(id);
   }
   const renameMateria = (id, nombre) => {
     const next = materias.map(m => m.id === id ? { ...m, nombre } : m);
-    setMaterias(next);
+    establecerMaterias(next);
     try { localStorage.setItem(materiasKey(), JSON.stringify(next)) } catch {}
   }
   const deleteMateria = async (id) => {
@@ -656,7 +656,7 @@ function App() {
       });
     } catch {}
     const next = materias.filter(m => m.id !== id);
-    setMaterias(next);
+    establecerMaterias(next);
     try {
       localStorage.setItem(materiasKey(), JSON.stringify(next));
       localStorage.removeItem(activeMaterialKey(id));
@@ -666,20 +666,20 @@ function App() {
 
   useEffect(() => {
     (async () => {
-      if (!materiaId) { setMaterials([]); setActiveMaterial(null); return; }
+      if (!materiaId) { establecerMateriales([]); establecerMaterialActivo(null); return; }
       try {
         const stored = await loadMaterialsFromLibrary();
         const scoped = stored.filter(m => m.materiaId === materiaId);
-        setMaterials(scoped);
+        establecerMateriales(scoped);
         const lastId = localStorage.getItem(activeMaterialKey(materiaId));
         const found = scoped.find(m => m.id === lastId);
-        setActiveMaterial(found || (scoped.length ? scoped[scoped.length - 1] : null));
+        establecerMaterialActivo(found || (scoped.length ? scoped[scoped.length - 1] : null));
       } catch {}
     })();
   }, [materiaId]);
 
   const chooseMaterial = (m) => {
-    setActiveMaterial(m);
+    establecerMaterialActivo(m);
     try { localStorage.setItem(activeMaterialKey(materiaId), m.id) } catch {}
   }
 
@@ -690,40 +690,40 @@ function App() {
     return () => { mq.removeEventListener ? mq.removeEventListener('change', handler) : mq.removeListener(handler) }
   }, []);
 
-  const phaseMinutes = phase === 'focus' ? studyMinutes : phase === 'short' ? shortBreakMinutes : longBreakMinutes
+  const phaseMinutes = fase === 'focus' ? minutosEstudio : fase === 'short' ? minutosDescansoCorto : minutosDescansoLargo
   const totalSeconds = phaseMinutes * 60
-  const phaseLabel = phase === 'focus' ? 'Enfoque' : phase === 'short' ? 'Descanso corto' : 'Descanso largo'
+  const phaseLabel = fase === 'focus' ? 'Enfoque' : fase === 'short' ? 'Descanso corto' : 'Descanso largo'
 
   useEffect(() => {
     if (!running) return;
     const id = setInterval(() => {
-      setSeconds(s => {
+      establecerSegundos(s => {
         if (s > 1) return s - 1;
         setRunning(false);
-        if (phase === 'focus') {
-          setNotice('¡Sesión de enfoque completada! Tu bosque ha crecido 🌱');
-          const newStreak = streak + 1;
-          setStreak(newStreak);
-          localStorage.setItem('lumina-streak', newStreak);
+        if (fase === 'focus') {
+          establecerAviso('¡Sesión de enfoque completada! Tu bosque ha crecido 🌱');
+          const newStreak = racha + 1;
+          establecerRacha(newStreak);
+          localStorage.setItem('lumina-racha', newStreak);
           const randomTree = TREE_TYPES[Math.floor(Math.random() * TREE_TYPES.length)];
-          const newForest = [...forest, randomTree];
-          setForest(newForest);
-          localStorage.setItem('lumina-forest', JSON.stringify(newForest));
-          const newCompleted = completedFocusSessions + 1;
-          setCompletedFocusSessions(newCompleted);
+          const newForest = [...bosque, randomTree];
+          establecerBosque(newForest);
+          localStorage.setItem('lumina-bosque', JSON.stringify(newForest));
+          const newCompleted = sesionesEnfoqueCompletadas + 1;
+          establecerSesionesEnfoqueCompletadas(newCompleted);
           localStorage.setItem('lumina-completed-sessions', newCompleted);
-          const nextPhase = (newCompleted % sessionsUntilLongBreak === 0) ? 'long' : 'short';
-          setPhase(nextPhase);
-          return (nextPhase === 'long' ? longBreakMinutes : shortBreakMinutes) * 60;
+          const nextPhase = (newCompleted % sesionesHastaDescansoLargo === 0) ? 'long' : 'short';
+          establecerFase(nextPhase);
+          return (nextPhase === 'long' ? minutosDescansoLargo : minutosDescansoCorto) * 60;
         } else {
-          setNotice(phase === 'long' ? 'Descanso largo terminado. ¿Lista para el próximo bloque de enfoque?' : 'Descanso corto terminado. Cuando quieras, retomá el enfoque.');
-          setPhase('focus');
-          return studyMinutes * 60;
+          establecerAviso(fase === 'long' ? 'Descanso largo terminado. ¿Lista para el próximo bloque de enfoque?' : 'Descanso corto terminado. Cuando quieras, retomá el enfoque.');
+          establecerFase('focus');
+          return minutosEstudio * 60;
         }
       });
     }, 1000);
     return () => clearInterval(id);
-  }, [running, streak, forest, phase, studyMinutes, shortBreakMinutes, longBreakMinutes, sessionsUntilLongBreak, completedFocusSessions]);
+  }, [running, racha, bosque, fase, minutosEstudio, minutosDescansoCorto, minutosDescansoLargo, sesionesHastaDescansoLargo, sesionesEnfoqueCompletadas]);
 
   useEffect(() => {
     let abandonTimeout = null;
@@ -732,8 +732,8 @@ function App() {
         if (running) {
           abandonTimeout = setTimeout(() => {
             setRunning(false);
-            setSeconds(totalSeconds);
-            setNotice('Abandonaste la sesión por más de 20 segundos. El temporizador se reinició.');
+            establecerSegundos(totalSeconds);
+            establecerAviso('Abandonaste la sesión por más de 20 segundos. El temporizador se reinició.');
           }, 20000);
         }
       } else if (abandonTimeout) {
@@ -748,26 +748,26 @@ function App() {
     };
   }, [running, totalSeconds]);
 
-  useEffect(() => { if (notice) { const id = setTimeout(() => setNotice(''), 3500); return () => clearTimeout(id) } }, [notice])
-  const time = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
-  const current = methods.find(m => m[0] === active), progress = useMemo(() => Math.round((totalSeconds - seconds) / totalSeconds * 100), [seconds, totalSeconds])
+  useEffect(() => { if (aviso) { const id = setTimeout(() => establecerAviso(''), 3500); return () => clearTimeout(id) } }, [aviso])
+  const time = `${String(Math.floor(segundos / 60)).padStart(2, '0')}:${String(segundos % 60).padStart(2, '0')}`
+  const actual = methods.find(m => m[0] === activo), progress = useMemo(() => Math.round((totalSeconds - segundos) / totalSeconds * 100), [segundos, totalSeconds])
   
-  const decodeTextMaterial = (material) => decodeTextFromBase64(material?.data)
+  const decodeTextMaterial = (material) => decodeTextFromBase64(material?.datos)
 
   // ===========================================================================
-  // 1. FUNCIÓN PARA EXTRAER TEXTO DE PDF (Debe ir ANTES de callAI)
+  // 1. FUNCIÓN PARA EXTRAER TEXTO DE PDF (Debe ir ANTES de llamarIA)
   // ===========================================================================
   async function extraerTextoDePdf(base64Data) {
     try {
       console.log('📄 Extrayendo texto del PDF para enviar al modelo local/OpenAI...');
       const pdfjsLib = await cargarPdfJs();
-      const loadingTask = pdfjsLib.getDocument({ data: base64ABytes(base64Data) });
+      const loadingTask = pdfjsLib.getDocument({ datos: base64ABytes(base64Data) });
       const pdf = await loadingTask.promise;
       let textoCompleto = '';
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
-        const textoPagina = textContent.items.map(item => item.str).join(' ');
+        const textoPagina = textContent.elementos.map(item => item.str).join(' ');
         textoCompleto += `--- PÁGINA ${i} ---\n${textoPagina}\n\n`;
       }
       console.log(`✓ Texto extraído del PDF con éxito: ${pdf.numPages} páginas, ${textoCompleto.length} caracteres.`);
@@ -778,20 +778,20 @@ function App() {
       return textoCompleto;
     } catch (err) {
       console.error('❌ Error al extraer texto del PDF:', err);
-      throw new Error(`Error procesando el PDF: ${err.message}`);
+      throw new Error(`Error procesando el PDF: ${err.mensaje}`);
     }
   }
 
   // ===========================================================================
-  // 2. FUNCIÓN callAI COMPLETA CON SOPORTE PARA STREAMING (TIEMPO REAL)
+  // 2. FUNCIÓN llamarIA COMPLETA CON SOPORTE PARA STREAMING (TIEMPO REAL)
   // ===========================================================================
-  const callAI = async ({ provider, model, key, promptText, material, baseUrl, onChunk }) => {
+  const llamarIA = async ({ provider, model, key, promptText, material, baseUrl, onChunk }) => {
     const cleanKey = (key || '').replace(/[^\x20-\x7E]/g, '').trim();
     
     // ------------------ GEMINI ------------------
     if (provider === 'gemini') {
-      const parts = [{ text: promptText }];
-      if (material?.data) parts.push({ inlineData: { mimeType: material.mimeType, data: material.data } });
+      const parts = [{ texto: promptText }];
+      if (material?.datos) parts.push({ inlineData: { mimeType: material.mimeType, datos: material.datos } });
       
       if (onChunk) {
         try {
@@ -802,25 +802,25 @@ function App() {
           });
           if (!r.ok) {
             const errData = await r.json().catch(() => ({}));
-            throw new Error(errData.error?.message || 'No pudimos conectar con Gemini.');
+            throw new Error(errData.error?.mensaje || 'No pudimos conectar con Gemini.');
           }
           const reader = r.body.getReader();
           const decoder = new TextDecoder('utf-8');
           let fullText = '', buffer = '';
           while (true) {
-            const { value, done } = await reader.read();
+            const { valor, done } = await reader.read();
             if (done) break;
-            buffer += decoder.decode(value, { stream: true });
+            buffer += decoder.decode(valor, { stream: true });
             const lines = buffer.split('\n');
             buffer = lines.pop() || '';
             for (const line of lines) {
               const trimmed = line.trim();
-              if (trimmed.startsWith('data: ')) {
+              if (trimmed.startsWith('datos: ')) {
                 try {
                   const parsed = JSON.parse(trimmed.slice(6));
-                  const text = parsed.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
-                  if (text) {
-                    fullText += text;
+                  const texto = parsed.candidates?.[0]?.contenido?.parts?.map(p => p.texto || '').join('') || '';
+                  if (texto) {
+                    fullText += texto;
                     onChunk(fullText);
                   }
                 } catch {}
@@ -829,7 +829,7 @@ function App() {
           }
           if (fullText) return fullText;
         } catch (e) {
-          console.warn('Gemini stream falló, reintentando modo normal:', e.message);
+          console.warn('Gemini stream falló, reintentando modo normal:', e.mensaje);
         }
       }
 
@@ -839,19 +839,19 @@ function App() {
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': cleanKey },
         body: JSON.stringify({ contents: [{ parts }] })
       });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error?.message || 'No pudimos conectar con Gemini.');
-      return data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || 'Gemini no devolvió una respuesta.';
+      const datos = await r.json();
+      if (!r.ok) throw new Error(datos.error?.mensaje || 'No pudimos conectar con Gemini.');
+      return datos.candidates?.[0]?.contenido?.parts?.map(p => p.texto || '').join('') || 'Gemini no devolvió una respuesta.';
     }
     
     // ------------------ ANTHROPIC ------------------
     if (provider === 'anthropic') {
-      const content = [{ type: 'text', text: promptText }];
-      if (material?.data) {
+      const contenido = [{ type: 'texto', texto: promptText }];
+      if (material?.datos) {
         if ((material.mimeType || '').includes('pdf')) {
-          content.push({ type: 'document', source: { type: 'base64', media_type: material.mimeType, data: material.data } });
+          contenido.push({ type: 'document', source: { type: 'base64', media_type: material.mimeType, datos: material.datos } });
         } else {
-          content.push({ type: 'text', text: decodeTextMaterial(material) });
+          contenido.push({ type: 'texto', texto: decodeTextMaterial(material) });
         }
       }
 
@@ -865,28 +865,28 @@ function App() {
               'anthropic-version': '2023-06-01',
               'anthropic-dangerous-direct-browser-access': 'true'
             },
-            body: JSON.stringify({ model, max_tokens: 4096, stream: true, messages: [{ role: 'user', content }] })
+            body: JSON.stringify({ model, max_tokens: 4096, stream: true, messages: [{ role: 'user', contenido }] })
           });
           if (!r.ok) {
             const errData = await r.json().catch(() => ({}));
-            throw new Error(errData.error?.message || 'No pudimos conectar con Claude.');
+            throw new Error(errData.error?.mensaje || 'No pudimos conectar con Claude.');
           }
           const reader = r.body.getReader();
           const decoder = new TextDecoder('utf-8');
           let fullText = '', buffer = '';
           while (true) {
-            const { value, done } = await reader.read();
+            const { valor, done } = await reader.read();
             if (done) break;
-            buffer += decoder.decode(value, { stream: true });
+            buffer += decoder.decode(valor, { stream: true });
             const lines = buffer.split('\n');
             buffer = lines.pop() || '';
             for (const line of lines) {
               const trimmed = line.trim();
-              if (trimmed.startsWith('data: ')) {
+              if (trimmed.startsWith('datos: ')) {
                 try {
                   const parsed = JSON.parse(trimmed.slice(6));
-                  if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
-                    fullText += parsed.delta.text;
+                  if (parsed.type === 'content_block_delta' && parsed.delta?.texto) {
+                    fullText += parsed.delta.texto;
                     onChunk(fullText);
                   }
                 } catch {}
@@ -895,7 +895,7 @@ function App() {
           }
           if (fullText) return fullText;
         } catch (e) {
-          console.warn('Claude stream falló, reintentando modo normal:', e.message);
+          console.warn('Claude stream falló, reintentando modo normal:', e.mensaje);
         }
       }
 
@@ -907,20 +907,20 @@ function App() {
           'anthropic-version': '2023-06-01',
           'anthropic-dangerous-direct-browser-access': 'true'
         },
-        body: JSON.stringify({ model, max_tokens: 4096, messages: [{ role: 'user', content }] })
+        body: JSON.stringify({ model, max_tokens: 4096, messages: [{ role: 'user', contenido }] })
       });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error?.message || 'No pudimos conectar con Claude.');
-      return (data.content || []).map(p => p.text || '').join('') || 'Claude no devolvió una respuesta.';
+      const datos = await r.json();
+      if (!r.ok) throw new Error(datos.error?.mensaje || 'No pudimos conectar con Claude.');
+      return (datos.contenido || []).map(p => p.texto || '').join('') || 'Claude no devolvió una respuesta.';
     }
 
     // ------------------ OPENAI & OPENAI COMPATIBLE (LM Studio, etc.) ------------------
-    const isPdf = material?.data && (material.mimeType || '').includes('pdf');
+    const isPdf = material?.datos && (material.mimeType || '').includes('pdf');
     let textoMaterial = '';
     
-    if (material?.data) {
+    if (material?.datos) {
       if (isPdf) {
-        textoMaterial = await extraerTextoDePdf(material.data);
+        textoMaterial = await extraerTextoDePdf(material.datos);
       } else {
         textoMaterial = decodeTextMaterial(material);
       }
@@ -951,11 +951,11 @@ function App() {
       messages: [
         { 
           role: 'system', 
-          content: 'Eres un asistente académico experto. Analiza el siguiente texto y responde según las instrucciones.' 
+          contenido: 'Eres un asistente académico experto. Analiza el siguiente texto y responde según las instrucciones.' 
         },
         { 
           role: 'user', 
-          content: userContent 
+          contenido: userContent 
         }
       ]
     };
@@ -974,26 +974,26 @@ function App() {
         if (rStream.ok && rStream.body) {
           const reader = rStream.body.getReader();
           const decoder = new TextDecoder('utf-8');
-          // fullText acumula SOLO el content real (nunca reasoning_content)
+          // fullText acumula SOLO el contenido real (nunca reasoning_content)
           let fullText = '', buffer = '';
           while (true) {
-            const { value, done } = await reader.read();
+            const { valor, done } = await reader.read();
             if (done) break;
-            buffer += decoder.decode(value, { stream: true });
+            buffer += decoder.decode(valor, { stream: true });
             const lines = buffer.split('\n');
             buffer = lines.pop() || '';
             for (const line of lines) {
               const trimmed = line.trim();
-              if (!trimmed || trimmed.startsWith(':') || trimmed === 'data: [DONE]') continue;
-              if (trimmed.startsWith('data: ')) {
+              if (!trimmed || trimmed.startsWith(':') || trimmed === 'datos: [DONE]') continue;
+              if (trimmed.startsWith('datos: ')) {
                 try {
                   const parsed = JSON.parse(trimmed.slice(6));
                   const delta = parsed.choices?.[0]?.delta || {};
-                  // Solo acumular content. Ignorar reasoning_content completamente.
-                  // Si el chunk tiene reasoning_content pero NO content, saltear.
-                  // Si tiene ambos, solo tomar content.
-                  if (delta.reasoning_content !== undefined && !delta.content) continue;
-                  const chunk = delta.content || parsed.choices?.[0]?.text || '';
+                  // Solo acumular contenido. Ignorar reasoning_content completamente.
+                  // Si el chunk tiene reasoning_content pero NO contenido, saltear.
+                  // Si tiene ambos, solo tomar contenido.
+                  if (delta.reasoning_content !== undefined && !delta.contenido) continue;
+                  const chunk = delta.contenido || parsed.choices?.[0]?.texto || '';
                   if (chunk) {
                     fullText += chunk;
                     onChunk(fullText);
@@ -1005,7 +1005,7 @@ function App() {
           if (fullText) return fullText;
         }
       } catch (err) {
-        console.warn('⚠ Stream en tiempo real falló, reintentando solicitud estándar:', err.message);
+        console.warn('⚠ Stream en tiempo real falló, reintentando solicitud estándar:', err.mensaje);
       }
     }
 
@@ -1019,58 +1019,58 @@ function App() {
       body: JSON.stringify(payload)
     });
     
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error?.message || `Error (${r.status}): No pudimos conectar con el modelo local / OpenAI.`);
-    const msg = data.choices?.[0]?.message || {};
-    // Usar SOLO msg.content — nunca msg.reasoning_content (chain-of-thought de Nemotron/DeepSeek/QwQ)
-    const finalContent = msg.content || '';
+    const datos = await r.json();
+    if (!r.ok) throw new Error(datos.error?.mensaje || `Error (${r.status}): No pudimos conectar con el modelo local / OpenAI.`);
+    const msg = datos.choices?.[0]?.mensaje || {};
+    // Usar SOLO msg.contenido — nunca msg.reasoning_content (chain-of-thought de Nemotron/DeepSeek/QwQ)
+    const finalContent = msg.contenido || '';
     return finalContent || 'El modelo no devolvió una respuesta. Prueba de nuevo.';
   }
 
   const fetchLocalModels = async () => {
-    const rawUrl = (baseUrlInput || 'http://localhost:1234').trim().replace(/\/$/, '');
+    const rawUrl = (entradaUrlBase || 'http://localhost:1234').trim().replace(/\/$/, '');
     const base = rawUrl.endsWith('/v1') || rawUrl.includes('/v1/') ? rawUrl.replace(/\/v1.*$/, '') : rawUrl;
     const modelsUrl = `${base}/v1/models`;
-    setLocalModelsFetching(true);
-    setLocalModelsError('');
-    setLocalModels([]);
+    establecerModelosLocalesObteniendo(true);
+    establecerModelosLocalesError('');
+    establecerModelosLocales([]);
     try {
       const headers = { 'Content-Type': 'application/json' };
-      const cleanedKey = (keyInput || '').replace(/[^\x20-\x7E]/g, '').trim();
+      const cleanedKey = (entradaClave || '').replace(/[^\x20-\x7E]/g, '').trim();
       if (cleanedKey) headers['Authorization'] = `Bearer ${cleanedKey}`;
       const res = await fetch(modelsUrl, { method: 'GET', headers });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const ids = (data.data || []).map(m => m.id).filter(Boolean);
+      const datos = await res.json();
+      const ids = (datos.datos || []).map(m => m.id).filter(Boolean);
       if (!ids.length) throw new Error('No se encontraron modelos cargados en el servidor.');
-      setLocalModels(ids);
-      if (!modelInput || !ids.includes(modelInput)) setModelInput(ids[0]);
+      establecerModelosLocales(ids);
+      if (!entradaModelo || !ids.includes(entradaModelo)) establecerEntradaModelo(ids[0]);
     } catch (err) {
-      setLocalModelsError(`No se pudo conectar: ${err.message}`);
+      establecerModelosLocalesError(`No se pudo conectar: ${err.mensaje}`);
     } finally {
-      setLocalModelsFetching(false);
+      establecerModelosLocalesObteniendo(false);
     }
   }
 
   const saveKey = async () => {
-    const key = keyInput.replace(/[^\x20-\x7E]/g, '').trim();
-    const provider = providerInput;
-    const model = provider === 'openai_compatible' ? (modelInput || '').trim() : modelInput;
+    const key = entradaClave.replace(/[^\x20-\x7E]/g, '').trim();
+    const provider = entradaProveedor;
+    const model = provider === 'openai_compatible' ? (entradaModelo || '').trim() : entradaModelo;
     const label = providerInfo(provider).label;
-    if (provider !== 'openai_compatible' && key.length < 10) return setNotice(`Revisa tu API Key: ${label} entrega una clave más larga.`);
-    if (provider === 'openai_compatible' && !(baseUrlInput || '').trim()) return setNotice('Ingresá la URL del servidor (ej: http://localhost:1234).');
-    if (provider === 'openai_compatible' && !model) return setNotice('Seleccioná o escribí el nombre del modelo que querés usar.');
-    setNotice(`Validando tu API Key con ${label}…`);
+    if (provider !== 'openai_compatible' && key.length < 10) return establecerAviso(`Revisa tu API Key: ${label} entrega una clave más larga.`);
+    if (provider === 'openai_compatible' && !(entradaUrlBase || '').trim()) return establecerAviso('Ingresá la URL del servidor (ej: http://localhost:1234).');
+    if (provider === 'openai_compatible' && !model) return establecerAviso('Seleccioná o escribí el nombre del modelo que querés usar.');
+    establecerAviso(`Validando tu API Key con ${label}…`);
     try {
-      await callAI({ provider, model, key, promptText: 'Responde únicamente: conexión lista', baseUrl: baseUrlInput });
+      await llamarIA({ provider, model, key, promptText: 'Responde únicamente: conexión lista', baseUrl: entradaUrlBase });
       localStorage.setItem('lumina-gemini-key', key);
       localStorage.setItem('lumina-ai-provider', provider);
       localStorage.setItem('lumina-ai-model', model);
-      localStorage.setItem('lumina-ai-base-url', baseUrlInput || '');
-      setApiKey(key); setAiProvider(provider); setAiModel(model); setAiBaseUrl(baseUrlInput || '');
-      setKeyOpen(false);
-      setNotice(`${label} conectado y tu API Key se guardó en este navegador.`)
-    } catch (error) { setNotice(`No pudimos validar la clave: ${error.message}`) }
+      localStorage.setItem('lumina-ai-base-url', entradaUrlBase || '');
+      establecerClaveApi(key); establecerProveedorIA(provider); establecerModeloIA(model); establecerUrlBaseIA(entradaUrlBase || '');
+      establecerClaveAbierta(false);
+      establecerAviso(`${label} conectado y tu API Key se guardó en este navegador.`)
+    } catch (error) { establecerAviso(`No pudimos validar la clave: ${error.mensaje}`) }
   }
 
   const parseStrictOutput = (methodId, code) => {
@@ -1083,12 +1083,12 @@ function App() {
         .replace(/[\u201C\u201D\u201E\u201F\u275D\u275E]/g, '"') // curly double quotes → "
         .replace(/[\u2018\u2019\u201A\u201B\u275B\u275C]/g, "'"); // curly single quotes → '
       const fn = new Function(`${sanitized}\nreturn ${varName};`);
-      const data = fn();
-      if (data == null) throw new Error(`el código no define "${varName}"`);
+      const datos = fn();
+      if (datos == null) throw new Error(`el código no define "${varName}"`);
       const shape = EXPECTED_SHAPE[methodId];
-      if (shape === 'array' && !Array.isArray(data)) throw new Error(`"${varName}" debería ser una lista`);
-      if (shape === 'object' && (Array.isArray(data) || typeof data !== 'object')) throw new Error(`"${varName}" debería ser un objeto`);
-      return data;
+      if (shape === 'array' && !Array.isArray(datos)) throw new Error(`"${varName}" debería ser una lista`);
+      if (shape === 'object' && (Array.isArray(datos) || typeof datos !== 'object')) throw new Error(`"${varName}" debería ser un objeto`);
+      return datos;
     };
 
     const candidates = new Set();
@@ -1115,14 +1115,14 @@ function App() {
       if (!candidate || !candidate.trim()) continue;
       try { return tryEval(candidate); } catch (err) { if (!firstError) firstError = err; }
     }
-    throw new Error(`no pudimos interpretar el código (${firstError?.message ?? 'error desconocido'})`);
+    throw new Error(`no pudimos interpretar el código (${firstError?.mensaje ?? 'error desconocido'})`);
   }
 
   const removeMaterial = (m) => {
-    setMaterials(p => p.filter(x => x.id !== m.id));
+    establecerMateriales(p => p.filter(x => x.id !== m.id));
     deleteMaterialFromLibrary(m.id).catch(() => {});
-    if (activeMaterial?.id === m.id) {
-      setActiveMaterial(null);
+    if (materialActivo?.id === m.id) {
+      establecerMaterialActivo(null);
       try { localStorage.removeItem(activeMaterialKey(materiaId)) } catch {}
     }
   }
@@ -1130,8 +1130,8 @@ function App() {
   const addMaterial = async (e) => {
     const fs = [...e.target.files];
     if (!fs.length) return;
-    if (!materiaId) { setNotice('Abre o crea una materia antes de agregar material.'); e.target.value = ''; return; }
-    setNotice('Procesando archivo para la IA...');
+    if (!materiaId) { establecerAviso('Abre o crea una materia antes de agregar material.'); e.target.valor = ''; return; }
+    establecerAviso('Procesando archivo para la IA...');
     try {
       const emptyFiles = [];
       const newMaterials = (await Promise.all(fs.map(async (f) => {
@@ -1150,141 +1150,141 @@ function App() {
           name: f.name,
           size: `${Math.max(1, Math.round(f.size / 1024))} KB`,
           type: isPdf ? 'PDF' : 'NOTA',
-          mimeType: f.type || 'text/plain',
-          data: base64
+          mimeType: f.type || 'texto/plain',
+          datos: base64
         }
       }))).filter(Boolean);
       if (newMaterials.length) {
-        setMaterials(p => [...p, ...newMaterials]);
+        establecerMateriales(p => [...p, ...newMaterials]);
         try { await Promise.all(newMaterials.map(m => saveMaterialToLibrary(m))) } catch {}
         chooseMaterial(newMaterials[newMaterials.length - 1]);
       }
       if (emptyFiles.length) {
-        setNotice(newMaterials.length
+        establecerAviso(newMaterials.length
           ? `Algunos archivos están vacíos y no se agregaron: ${emptyFiles.join(', ')}.`
           : `El archivo "${emptyFiles.join(', ')}" está vacío o no se pudo leer. Probá con otro archivo.`);
       } else {
-        setNotice('Material agregado y listo para usarse con la IA.');
+        establecerAviso('Material agregado y listo para usarse con la IA.');
       }
     } catch (error) {
-      setNotice('Hubo un error al procesar el archivo.');
+      establecerAviso('Hubo un error al procesar el archivo.');
     }
-    e.target.value = '';
+    e.target.valor = '';
   }
 
   const generate = async (methodOverride) => {
-    const m = methodOverride || current;
-    const label = providerInfo(aiProvider).label;
-    if (!apiKey && aiProvider !== 'openai_compatible') return setNotice('Primero conectá tu IA (API Key).');
-    if (!activeMaterial) return setNotice(materials.length > 0 ? 'Selecciona un archivo de tu biblioteca antes de analizar.' : 'Agrega un archivo a tu biblioteca antes de analizar.');
-    setAiResult('');
-    setStreamText('');
-    setPreviewData(null);
-    setPreviewError('');
-    setLoading(true);
-    setNotice(`${label} está analizando tu material...`);
+    const m = methodOverride || actual;
+    const label = providerInfo(proveedorIA).label;
+    if (!claveApi && proveedorIA !== 'openai_compatible') return establecerAviso('Primero conectá tu IA (API Key).');
+    if (!materialActivo) return establecerAviso(materiales.length > 0 ? 'Selecciona un archivo de tu biblioteca antes de analizar.' : 'Agrega un archivo a tu biblioteca antes de analizar.');
+    establecerResultadoIA('');
+    establecerTextoFlujo('');
+    establecerDatosVistaPrevia(null);
+    establecerErrorVistaPrevia('');
+    establecerCargando(true);
+    establecerAviso(`${label} está analizando tu material...`);
     try {
       const promptBase = m[4] || `Eres un tutor experto...`;
       const strict = STRICT_METHODS.includes(m[0]);
       const promptFinal = strict
-        ? `${promptBase}\n\nIMPORTANTE: tu respuesta debe ser EXCLUSIVAMENTE el bloque de código JavaScript solicitado, sin comillas envolventes, sin bloques de markdown (nada de \`\`\`), sin introducciones ni explicaciones antes o después. Usa como base estricta este documento: "${activeMaterial.name}".`
-        : `${promptBase} Usa como base estricta este documento: "${activeMaterial.name}".`;
+        ? `${promptBase}\n\nIMPORTANTE: tu respuesta debe ser EXCLUSIVAMENTE el bloque de código JavaScript solicitado, sin comillas envolventes, sin bloques de markdown (nada de \`\`\`), sin introducciones ni explicaciones antes o después. Usa como base estricta este documento: "${materialActivo.name}".`
+        : `${promptBase} Usa como base estricta este documento: "${materialActivo.name}".`;
       
-      const rawOutput = await callAI({
-        provider: aiProvider,
-        model: aiModel,
-        key: apiKey,
+      const rawOutput = await llamarIA({
+        provider: proveedorIA,
+        model: modeloIA,
+        key: claveApi,
         promptText: promptFinal,
-        material: activeMaterial,
-        baseUrl: aiBaseUrl,
-        onChunk: (partialText) => setStreamText(partialText)
+        material: materialActivo,
+        baseUrl: urlBaseIA,
+        onChunk: (partialText) => establecerTextoFlujo(partialText)
       });
       const output = cleanAIOutput(rawOutput);
-      setAiResult(output);
-      try { localStorage.setItem(resultCacheKey(activeMaterial, m[0]), output) } catch {}
+      establecerResultadoIA(output);
+      try { localStorage.setItem(resultCacheKey(materialActivo, m[0]), output) } catch {}
       
       if (strict) {
         const tryParse = (src) => {
           try { return parseStrictOutput(m[0], src) } catch {}
           return null
         }
-        let data = tryParse(output) || tryParse(rawOutput)
+        let datos = tryParse(output) || tryParse(rawOutput)
 
         // Auto-retry para modelos locales: si el parse falla, reintentamos con
         // un prompt simplificado que fuerza JSON puro y lo wrapeamos nosotros.
-        if (!data && aiProvider === 'openai_compatible') {
+        if (!datos && proveedorIA === 'openai_compatible') {
           try {
-            setNotice('El modelo no generó el formato correcto, reintentando...')
+            establecerAviso('El modelo no generó el formato correcto, reintentando...')
             const varName = VAR_NAMES[m[0]]
             const shape = EXPECTED_SHAPE[m[0]]
             const retryPrompt = `${m[4]}
 
-IMPORTANTE CRÍTICO: devolvé ÚNICAMENTE el valor ${shape === 'array' ? 'de un array JSON' : 'de un objeto JSON'} sin ningún texto extra, sin bloques de markdown, sin la declaración "const ${varName} =", solo el ${shape === 'array' ? 'array' : 'objeto'} en sí. Empezá directamente con ${shape === 'array' ? '[' : '{'} y terminá con ${shape === 'array' ? ']' : '}'}. Usá como base estricta: "${activeMaterial.name}"`
-            const retryRaw = await callAI({ provider: aiProvider, model: aiModel, key: apiKey, promptText: retryPrompt, material: activeMaterial, baseUrl: aiBaseUrl })
+IMPORTANTE CRÍTICO: devolvé ÚNICAMENTE el valor ${shape === 'array' ? 'de un array JSON' : 'de un objeto JSON'} sin ningún texto extra, sin bloques de markdown, sin la declaración "const ${varName} =", solo el ${shape === 'array' ? 'array' : 'objeto'} en sí. Empezá directamente con ${shape === 'array' ? '[' : '{'} y terminá con ${shape === 'array' ? ']' : '}'}. Usá como base estricta: "${materialActivo.name}"`
+            const retryRaw = await llamarIA({ provider: proveedorIA, model: modeloIA, key: claveApi, promptText: retryPrompt, material: materialActivo, baseUrl: urlBaseIA })
             const retryClean = cleanAIOutput(retryRaw)
             // Wrapear como const varName = <respuesta>;
             const wrapped = `const ${varName} = ${retryClean.trim().replace(/;$/, '')};`
-            data = tryParse(wrapped) || tryParse(repairJSCode(wrapped, varName))
+            datos = tryParse(wrapped) || tryParse(repairJSCode(wrapped, varName))
           } catch {}
         }
 
-        if (data) {
-          setPreviewData(data);
-          setPreviewVersion(v => v + 1);
-          try { localStorage.setItem(previewCacheKey(activeMaterial, m[0]), JSON.stringify(data)) } catch {}
-          setNotice(`${label} armó tu ${m[1]}. Ya lo podés usar acá abajo.`);
+        if (datos) {
+          establecerDatosVistaPrevia(datos);
+          establecerVersionVistaPrevia(v => v + 1);
+          try { localStorage.setItem(previewCacheKey(materialActivo, m[0]), JSON.stringify(datos)) } catch {}
+          establecerAviso(`${label} armó tu ${m[1]}. Ya lo podés usar acá abajo.`);
         } else {
           const errMsg = 'el modelo no generó el formato esperado'
-          setPreviewError(errMsg);
-          setNotice(`No pudimos interpretar el resultado automáticamente: ${errMsg}. Descargá el código de abajo y revisalo, o regenerá con ${label}.`);
+          establecerErrorVistaPrevia(errMsg);
+          establecerAviso(`No pudimos interpretar el resultado automáticamente: ${errMsg}. Descargá el código de abajo y revisalo, o regenerá con ${label}.`);
         }
       } else {
-        setNotice(`${label} preparó una propuesta para tu sesión.`);
+        establecerAviso(`${label} preparó una propuesta para tu sesión.`);
       }
     } catch (error) {
-      setNotice(`${label} no pudo responder: ${error.message}`)
+      establecerAviso(`${label} no pudo responder: ${error.mensaje}`)
     } finally {
-      setLoading(false);
-      setStreamText('');
+      establecerCargando(false);
+      establecerTextoFlujo('');
     }
   }
 
   const loadOrGenerate = (methodOverride) => {
-    const m = methodOverride || current;
-    const cached = activeMaterial ? localStorage.getItem(resultCacheKey(activeMaterial, m[0])) : null;
+    const m = methodOverride || actual;
+    const cached = materialActivo ? localStorage.getItem(resultCacheKey(materialActivo, m[0])) : null;
     if (cached) {
-      setAiResult(cached);
-      const cachedPreview = (STRICT_METHODS.includes(m[0]) && activeMaterial) ? localStorage.getItem(previewCacheKey(activeMaterial, m[0])) : null;
-      try { setPreviewData(cachedPreview ? JSON.parse(cachedPreview) : null) } catch { setPreviewData(null) }
-      setPreviewVersion(v => v + 1);
-      setPreviewError('');
-      setNotice('Mostrando el resultado ya generado para este método. Usa "Regenerar" si querés uno nuevo.');
+      establecerResultadoIA(cached);
+      const cachedPreview = (STRICT_METHODS.includes(m[0]) && materialActivo) ? localStorage.getItem(previewCacheKey(materialActivo, m[0])) : null;
+      try { establecerDatosVistaPrevia(cachedPreview ? JSON.parse(cachedPreview) : null) } catch { establecerDatosVistaPrevia(null) }
+      establecerVersionVistaPrevia(v => v + 1);
+      establecerErrorVistaPrevia('');
+      establecerAviso('Mostrando el resultado ya generado para este método. Usa "Regenerar" si querés uno nuevo.');
     } else {
       generate(m);
     }
   }
 
   const openStudy = (methodOverride) => {
-    setPendingMethod(methodOverride || null);
-    setStudyPickerOpen(true);
+    establecerMetodoPendiente(methodOverride || null);
+    establecerSelectorEstudioAbierto(true);
   }
 
   const beginStudy = () => {
-    if (!activeMaterial) { setNotice('Elige un cuaderno para empezar.'); return; }
-    if (pendingMethod) setActive(pendingMethod[0]);
-    setStudyPickerOpen(false);
-    setRoom(true);
-    loadOrGenerate(pendingMethod || current);
+    if (!materialActivo) { establecerAviso('Elige un cuaderno para empezar.'); return; }
+    if (metodoPendiente) establecerActivo(metodoPendiente[0]);
+    establecerSelectorEstudioAbierto(false);
+    establecerSala(true);
+    loadOrGenerate(metodoPendiente || actual);
   }
 
   const selectMaterialForStudy = (m) => {
     chooseMaterial(m);
-    const cached = localStorage.getItem(resultCacheKey(m, current[0]));
-    setAiResult(cached || '');
-    const cachedPreview = STRICT_METHODS.includes(current[0]) ? localStorage.getItem(previewCacheKey(m, current[0])) : null;
-    try { setPreviewData(cachedPreview ? JSON.parse(cachedPreview) : null) } catch { setPreviewData(null) }
-    setPreviewVersion(v => v + 1);
-    setPreviewError('');
+    const cached = localStorage.getItem(resultCacheKey(m, actual[0]));
+    establecerResultadoIA(cached || '');
+    const cachedPreview = STRICT_METHODS.includes(actual[0]) ? localStorage.getItem(previewCacheKey(m, actual[0])) : null;
+    try { establecerDatosVistaPrevia(cachedPreview ? JSON.parse(cachedPreview) : null) } catch { establecerDatosVistaPrevia(null) }
+    establecerVersionVistaPrevia(v => v + 1);
+    establecerErrorVistaPrevia('');
   }
 
   const saveSettings = () => {
@@ -1292,19 +1292,19 @@ IMPORTANTE CRÍTICO: devolvé ÚNICAMENTE el valor ${shape === 'array' ? 'de un 
     const short = Math.max(1, Math.min(60, parseInt(settingsInput.short) || 10));
     const long = Math.max(1, Math.min(90, parseInt(settingsInput.long) || 25));
     const cycle = Math.max(1, Math.min(12, parseInt(settingsInput.cycle) || 4));
-    setStudyMinutes(study); localStorage.setItem('lumina-study-minutes', study);
-    setShortBreakMinutes(short); localStorage.setItem('lumina-short-break', short);
-    setLongBreakMinutes(long); localStorage.setItem('lumina-long-break', long);
-    setSessionsUntilLongBreak(cycle); localStorage.setItem('lumina-sessions-until-long', cycle);
+    establecerMinutosEstudio(study); localStorage.setItem('lumina-study-minutes', study);
+    establecerMinutosDescansoCorto(short); localStorage.setItem('lumina-short-break', short);
+    establecerMinutosDescansoLargo(long); localStorage.setItem('lumina-long-break', long);
+    establecerSesionesHastaDescansoLargo(cycle); localStorage.setItem('lumina-sessions-until-long', cycle);
     if (!running) {
-      const mins = phase === 'focus' ? study : phase === 'short' ? short : long;
-      setSeconds(mins * 60);
+      const mins = fase === 'focus' ? study : fase === 'short' ? short : long;
+      establecerSegundos(mins * 60);
     }
-    setSettingsOpen(false);
-    setNotice(`Ciclo configurado: ${study} min enfoque · ${short} min descanso corto · ${long} min descanso largo cada ${cycle} sesiones.`);
+    establecerConfiguracionAbierta(false);
+    establecerAviso(`Ciclo configurado: ${study} min enfoque · ${short} min descanso corto · ${long} min descanso largo cada ${cycle} sesiones.`);
   }
 
-  const showSection = (name) => isMobile || tab === name;
+  const showSection = (name) => isMobile || pestanha === name;
 
   return (
     <div className="app-shell">
@@ -1312,7 +1312,7 @@ IMPORTANTE CRÍTICO: devolvé ÚNICAMENTE el valor ${shape === 'array' ? 'de un 
         <a className="logo"> <i>✦</i> <span>LÚMINA <small>ESTUDIO CONSCIENTE</small></span> </a>
         <nav>
           {['Inicio', 'Biblioteca', 'Progreso'].map(x =>
-            <button onClick={() => setTab(x)} className={tab === x ? 'nav-item selected' : 'nav-item'} key={x}>
+            <button onClick={() => establecerPestanha(x)} className={pestanha === x ? 'nav-item seleccionado' : 'nav-item'} key={x}>
               <span>{x === 'Inicio' ? '⌂' : x === 'Biblioteca' ? '▤' : '◔'}</span>{x}
             </button>
           )}
@@ -1329,19 +1329,19 @@ IMPORTANTE CRÍTICO: devolvé ÚNICAMENTE el valor ${shape === 'array' ? 'de un 
           </div>
           <div className="header-actions">
             <button
-              className="theme-toggle"
+              className="tema-toggle"
               role="switch"
-              aria-checked={theme === 'dark'}
-              aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-              title={theme === 'dark' ? 'Modo oscuro activado' : 'Modo claro activado'}
+              aria-checked={tema === 'dark'}
+              aria-label={tema === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+              title={tema === 'dark' ? 'Modo oscuro activado' : 'Modo claro activado'}
               onClick={toggleTheme}
             >
-              <span className="theme-toggle-icon sun">☀</span>
-              <span className="theme-toggle-icon moon">☾</span>
-              <span className="theme-toggle-knob" />
+              <span className="tema-toggle-icon sun">☀</span>
+              <span className="tema-toggle-icon moon">☾</span>
+              <span className="tema-toggle-knob" />
             </button>
-            <button className={apiKey ? 'key-button connected' : 'key-button'} onClick={() => { setProviderInput(aiProvider); setModelInput(aiModel); setBaseUrlInput(aiBaseUrl); setKeyOpen(true) }} title={apiKey ? `${providerInfo(aiProvider).label} conectado` : 'Conectar IA'}>
-              <i>{apiKey ? '✓' : '◇'}</i> <span className="key-button-label">{apiKey ? `${providerInfo(aiProvider).label} conectado` : 'Conectar IA'}</span>
+            <button className={claveApi ? 'key-button connected' : 'key-button'} onClick={() => { establecerEntradaProveedor(proveedorIA); establecerEntradaModelo(modeloIA); establecerEntradaUrlBase(urlBaseIA); establecerClaveAbierta(true) }} title={claveApi ? `${providerInfo(proveedorIA).label} conectado` : 'Conectar IA'}>
+              <i>{claveApi ? '✓' : '◇'}</i> <span className="key-button-label">{claveApi ? `${providerInfo(proveedorIA).label} conectado` : 'Conectar IA'}</span>
             </button>
           </div>
         </header>
@@ -1368,8 +1368,8 @@ IMPORTANTE CRÍTICO: devolvé ÚNICAMENTE el valor ${shape === 'array' ? 'de un 
               </div>
               <div className="method-grid" id="method-grid">
                 {methods.map(m =>
-                  <button className={active === m[0] ? 'method-card active' : 'method-card'} onClick={() => openStudy(m)} key={m[0]}>
-                    <i>{m[3]}</i> <strong>{m[1]}</strong> <span>{m[2]}</span>{active === m[0] && <b>Elegido</b>}
+                  <button className={activo === m[0] ? 'method-card activo' : 'method-card'} onClick={() => openStudy(m)} key={m[0]}>
+                    <i>{m[3]}</i> <strong>{m[1]}</strong> <span>{m[2]}</span>{activo === m[0] && <b>Elegido</b>}
                   </button>
                 )}
               </div>
@@ -1378,7 +1378,7 @@ IMPORTANTE CRÍTICO: devolvé ÚNICAMENTE el valor ${shape === 'array' ? 'de un 
         )}
         {showSection('Biblioteca') && (
           <section className="lower-grid" id="biblioteca-section" style={{ gridTemplateColumns: '1fr', marginTop: isMobile ? '38px' : 0 }}>
-            <article className="materials-card">
+            <article className="materiales-card">
               {!materiaId ? (
                 <>
                   <div className="card-head">
@@ -1388,13 +1388,13 @@ IMPORTANTE CRÍTICO: devolvé ÚNICAMENTE el valor ${shape === 'array' ? 'de un 
                     {materias.map(mat =>
                       <div className="method-card" onClick={() => chooseMateria(mat.id)} key={mat.id} style={{ cursor: 'pointer' }}>
                         <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 2 }}>
-                          <button title="Renombrar materia" onClick={(e) => { e.stopPropagation(); setMateriaToRename(mat.id); setMateriaModalOpen(true) }} style={{ background: 'none', border: 'none', color: 'var(--muted)', padding: 4, cursor: 'pointer', fontSize: 12 }}>✎</button>
+                          <button title="Renombrar materia" onClick={(e) => { e.stopPropagation(); establecerMateriaARenombrar(mat.id); establecerMateriaModalAbierto(true) }} style={{ background: 'none', border: 'none', color: 'var(--muted)', padding: 4, cursor: 'pointer', fontSize: 12 }}>✎</button>
                           <button title="Eliminar materia" onClick={(e) => { e.stopPropagation(); deleteMateria(mat.id) }} style={{ background: 'none', border: 'none', color: 'var(--danger)', padding: 4, cursor: 'pointer', fontSize: 12 }}>🗑</button>
                         </div>
                         <i>▤</i> <strong>{mat.nombre}</strong> <span>Ver cuadernos de esta materia</span>
                       </div>
                     )}
-                    <button className="method-card" onClick={() => { setMateriaToRename(null); setMateriaModalOpen(true) }}>
+                    <button className="method-card" onClick={() => { establecerMateriaARenombrar(null); establecerMateriaModalAbierto(true) }}>
                       <i>+</i> <strong>Nueva materia</strong> <span>Crea una carpeta para organizar tus cuadernos</span>
                     </button>
                   </div>
@@ -1409,11 +1409,11 @@ IMPORTANTE CRÍTICO: devolvé ÚNICAMENTE el valor ${shape === 'array' ? 'de un 
                     </div>
                     <label className="upload-link">+ Agregar <input type="file" accept=".pdf,.txt,.md" multiple onChange={addMaterial} /></label>
                   </div>
-                  <div className="material-list">
-                    {materials.length ? materials.map((m, i) =>
-                      <div className="material" key={i} onClick={() => chooseMaterial(m)} onDoubleClick={() => setPreviewMaterial(m)} title="Doble clic para ver una vista previa" style={{ cursor: 'pointer', outline: activeMaterial?.id === m.id ? '2px solid #cdc4f2' : 'none', borderRadius: activeMaterial?.id === m.id ? '8px' : 0 }}>
+                  <div className="material-lista">
+                    {materiales.length ? materiales.map((m, i) =>
+                      <div className="material" key={i} onClick={() => chooseMaterial(m)} onDoubleClick={() => establecerVistaPreviaMaterial(m)} title="Doble clic para ver una vista previa" style={{ cursor: 'pointer', outline: materialActivo?.id === m.id ? '2px solid #cdc4f2' : 'none', borderRadius: materialActivo?.id === m.id ? '8px' : 0 }}>
                         <i>{m.type === 'PDF' ? 'PDF' : 'TXT'}</i>
-                        <span> <b>{m.name}</b> <small>{m.type} · {m.size}{activeMaterial?.id === m.id ? ' · Seleccionado' : ''}</small> </span>
+                        <span> <b>{m.name}</b> <small>{m.type} · {m.size}{materialActivo?.id === m.id ? ' · Seleccionado' : ''}</small> </span>
                         <button onClick={(e) => { e.stopPropagation(); removeMaterial(m) }}>⋯</button>
                       </div>
                     ) : (
@@ -1441,10 +1441,10 @@ IMPORTANTE CRÍTICO: devolvé ÚNICAMENTE el valor ${shape === 'array' ? 'de un 
                   </h3>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  {running && phase === 'focus' && (
+                  {running && fase === 'focus' && (
                     <span className="progreso-focus-pill">🔥 Enfoque activo</span>
                   )}
-                  <button className="settings" onClick={() => { setSettingsInput({ study: studyMinutes, short: shortBreakMinutes, long: longBreakMinutes, cycle: sessionsUntilLongBreak }); setSettingsOpen(true) }}>⚙</button>
+                  <button className="settings" onClick={() => { setSettingsInput({ study: minutosEstudio, short: minutosDescansoCorto, long: minutosDescansoLargo, cycle: sesionesHastaDescansoLargo }); establecerConfiguracionAbierta(true) }}>⚙</button>
                 </div>
               </div>
 
@@ -1462,13 +1462,13 @@ IMPORTANTE CRÍTICO: devolvé ÚNICAMENTE el valor ${shape === 'array' ? 'de un 
                     <div> <b>{time}</b> <span>{phaseLabel}{running ? '' : ' · pausa'}</span> </div>
                   </div>
                   <p className="progreso-session-hint">
-                    Sesión {(completedFocusSessions % sessionsUntilLongBreak) + (phase === 'focus' ? 1 : 0)} de {sessionsUntilLongBreak}
+                    Sesión {(sesionesEnfoqueCompletadas % sesionesHastaDescansoLargo) + (fase === 'focus' ? 1 : 0)} de {sesionesHastaDescansoLargo}
                   </p>
                   <div className="timer-actions">
-                    <button onClick={() => { setRunning(!running); setNotice(running ? 'Pausa activada.' : (phase === 'focus' ? 'Sesión de enfoque iniciada.' : 'Descanso iniciado.')) }}>
-                      {running ? 'Pausar' : phase === 'focus' ? 'Iniciar enfoque' : 'Iniciar descanso'}
+                    <button onClick={() => { setRunning(!running); establecerAviso(running ? 'Pausa activada.' : (fase === 'focus' ? 'Sesión de enfoque iniciada.' : 'Descanso iniciado.')) }}>
+                      {running ? 'Pausar' : fase === 'focus' ? 'Iniciar enfoque' : 'Iniciar descanso'}
                     </button>
-                    <button onClick={() => { setSeconds(totalSeconds); setRunning(false) }}>↺</button>
+                    <button onClick={() => { establecerSegundos(totalSeconds); setRunning(false) }}>↺</button>
                   </div>
 
                   {/* ── Bosque integrado debajo del timer ── */}
@@ -1476,19 +1476,19 @@ IMPORTANTE CRÍTICO: devolvé ÚNICAMENTE el valor ${shape === 'array' ? 'de un 
                     <div className="bosque-header">
                       <div>
                         <p className="eyebrow" style={{ marginBottom: 3 }}>TU BOSQUE</p>
-                        <span className="bosque-count">
-                          {forest.length === 0 ? 'Sin plantas aún' : `${forest.length} ${forest.length === 1 ? 'planta' : 'plantas'}`}
+                        <span className="bosque-contador">
+                          {bosque.length === 0 ? 'Sin plantas aún' : `${bosque.length} ${bosque.length === 1 ? 'planta' : 'plantas'}`}
                         </span>
                       </div>
                       <div className="bosque-racha">
-                        <span className="bosque-racha-num">{streak}</span>
+                        <span className="bosque-racha-num">{racha}</span>
                         <span className="bosque-racha-fire">🔥</span>
                         <span className="bosque-racha-label">racha</span>
                       </div>
                     </div>
-                    {forest.length ? (
+                    {bosque.length ? (
                       <div className="bosque-grid">
-                        {forest.map((tree, i) => (
+                        {bosque.map((tree, i) => (
                           <span key={i} className="bosque-tree">{tree}</span>
                         ))}
                       </div>
@@ -1506,13 +1506,13 @@ IMPORTANTE CRÍTICO: devolvé ÚNICAMENTE el valor ${shape === 'array' ? 'de un 
 
                 {/* ── Panel derecho: To-Do ── */}
                 <div className="progreso-todo-col">
-                  <TodoList
-                    focusActivo={running && phase === 'focus'}
-                    onBonusArbol={() => {
+                  <ListaTareas
+                    focusActivo={running && fase === 'focus'}
+                    alBonoArbol={() => {
                       const randomTree = TREE_TYPES[Math.floor(Math.random() * TREE_TYPES.length)];
-                      const newForest = [...forest, randomTree];
-                      setForest(newForest);
-                      try { localStorage.setItem('lumina-forest', JSON.stringify(newForest)) } catch {}
+                      const newForest = [...bosque, randomTree];
+                      establecerBosque(newForest);
+                      try { localStorage.setItem('lumina-bosque', JSON.stringify(newForest)) } catch {}
                     }}
                   />
                 </div>
@@ -1522,46 +1522,46 @@ IMPORTANTE CRÍTICO: devolvé ÚNICAMENTE el valor ${shape === 'array' ? 'de un 
           </section>
         )}
       </main>
-      {room &&
-        <StudyRoom
-          method={current} apiKey={apiKey} providerLabel={providerInfo(aiProvider).label} aiResult={aiResult} previewData={previewData} previewError={previewError} previewVersion={previewVersion} loading={loading} streamText={streamText}
-          materials={materials} activeMaterial={activeMaterial} onSelectMaterial={selectMaterialForStudy}
-          onAddMaterial={addMaterial} onRemoveMaterial={removeMaterial} onPreviewMaterial={setPreviewMaterial}
-          onClose={() => setRoom(false)} onGenerate={() => generate(current)}
-          callAI={callAI} aiProvider={aiProvider} aiModel={aiModel} aiBaseUrl={aiBaseUrl}
+      {sala &&
+        <SalaEstudio
+          method={actual} claveApi={claveApi} providerLabel={providerInfo(proveedorIA).label} resultadoIA={resultadoIA} datosVistaPrevia={datosVistaPrevia} errorVistaPrevia={errorVistaPrevia} versionVistaPrevia={versionVistaPrevia} cargando={cargando} textoFlujo={textoFlujo}
+          materiales={materiales} materialActivo={materialActivo} alSeleccionarMaterial={selectMaterialForStudy}
+          alAgregarMaterial={addMaterial} alQuitarMaterial={removeMaterial} alVistaPreviaMaterial={establecerVistaPreviaMaterial}
+          alCerrar={() => establecerSala(false)} alGenerar={() => generate(actual)}
+          llamarIA={llamarIA} proveedorIA={proveedorIA} modeloIA={modeloIA} urlBaseIA={urlBaseIA}
         />
       }
-      {previewMaterial && <MaterialPreviewModal material={previewMaterial} onClose={() => setPreviewMaterial(null)} />}
-      {keyOpen && (
-        <KeyModal
-          value={keyInput} setValue={setKeyInput}
-          provider={providerInput} setProvider={setProviderInput}
-          model={modelInput} setModel={setModelInput}
-          baseUrl={baseUrlInput} setBaseUrl={setBaseUrlInput}
-          localModels={localModels} localModelsFetching={localModelsFetching} localModelsError={localModelsError}
-          onFetchLocalModels={fetchLocalModels}
-          onSave={saveKey} onClose={() => setKeyOpen(false)}
+      {vistaPreviaMaterial && <ModalVistaPreviaMaterial material={vistaPreviaMaterial} alCerrar={() => establecerVistaPreviaMaterial(null)} />}
+      {claveAbierta && (
+        <ModalClave
+          valor={entradaClave} establecerValor={establecerEntradaClave}
+          provider={entradaProveedor} setProvider={establecerEntradaProveedor}
+          model={entradaModelo} setModel={establecerEntradaModelo}
+          baseUrl={entradaUrlBase} setBaseUrl={establecerEntradaUrlBase}
+          modelosLocales={modelosLocales} modelosLocalesObteniendo={modelosLocalesObteniendo} modelosLocalesError={modelosLocalesError}
+          alObtenerModelosLocales={fetchLocalModels}
+          alGuardar={saveKey} alCerrar={() => establecerClaveAbierta(false)}
         />
       )}
-      {settingsOpen && <SettingsModal value={settingsInput} setValue={setSettingsInput} onSave={saveSettings} onClose={() => setSettingsOpen(false)} />}
-      {studyPickerOpen && (
-        <StudyPickerModal
-          materias={materias} materiaId={materiaId} materials={materials} activeMaterial={activeMaterial}
-          onChooseMateria={chooseMateria} onChooseMaterial={chooseMaterial}
-          onAddMaterial={addMaterial} onRemoveMaterial={removeMaterial} onPreviewMaterial={setPreviewMaterial}
-          onCreateMateria={() => { setMateriaToRename(null); setMateriaModalOpen(true) }}
-          onConfirm={beginStudy} onClose={() => setStudyPickerOpen(false)}
+      {configuracionAbierta && <ModalConfiguracion valor={settingsInput} establecerValor={setSettingsInput} alGuardar={saveSettings} alCerrar={() => establecerConfiguracionAbierta(false)} />}
+      {selectorEstudioAbierto && (
+        <ModalSelectorEstudio
+          materias={materias} materiaId={materiaId} materiales={materiales} materialActivo={materialActivo}
+          alElegirMateria={chooseMateria} alElegirMaterial={chooseMaterial}
+          alAgregarMaterial={addMaterial} alQuitarMaterial={removeMaterial} alVistaPreviaMaterial={establecerVistaPreviaMaterial}
+          alCrearMateria={() => { establecerMateriaARenombrar(null); establecerMateriaModalAbierto(true) }}
+          alConfirmar={beginStudy} alCerrar={() => establecerSelectorEstudioAbierto(false)}
         />
       )}
-      {materiaModalOpen && (
-        <MateriaModal
-          mode={materiaToRename ? 'rename' : 'create'}
-          initialName={materiaToRename ? (materias.find(m => m.id === materiaToRename)?.nombre || '') : ''}
-          onSubmit={(nombre) => materiaToRename ? renameMateria(materiaToRename, nombre) : createMateria(nombre)}
-          onClose={() => { setMateriaModalOpen(false); setMateriaToRename(null) }}
+      {materiaModalAbierto && (
+        <ModalMateria
+          modo={materiaARenombrar ? 'rename' : 'create'}
+          initialName={materiaARenombrar ? (materias.find(m => m.id === materiaARenombrar)?.nombre || '') : ''}
+          alEnviar={(nombre) => materiaARenombrar ? renameMateria(materiaARenombrar, nombre) : createMateria(nombre)}
+          alCerrar={() => { establecerMateriaModalAbierto(false); establecerMateriaARenombrar(null) }}
         />
       )}
-      {notice && <div className="toast">✦ {notice}</div>}
+      {aviso && <div className="toast">✦ {aviso}</div>}
     </div>
   )
 }
@@ -1569,7 +1569,7 @@ IMPORTANTE CRÍTICO: devolvé ÚNICAMENTE el valor ${shape === 'array' ? 'de un 
 // ===========================================================================
 // TO-DO LIST COMPLETO
 // ===========================================================================
-function TodoList({ focusActivo = false, onBonusArbol }) {
+function ListaTareas({ focusActivo = false, alBonoArbol }) {
   const [todos, setTodos] = useState(() => {
     try { return JSON.parse(localStorage.getItem('lumina-todos') || '[]') } catch { return [] }
   });
@@ -1598,7 +1598,7 @@ function TodoList({ focusActivo = false, onBonusArbol }) {
     if (!texto) return;
     const nueva = {
       id: Math.random().toString(36).substr(2, 9),
-      text: texto,
+      texto: texto,
       prioridad: nuevaPrioridad,
       done: false,
       createdAt: Date.now()
@@ -1610,7 +1610,7 @@ function TodoList({ focusActivo = false, onBonusArbol }) {
   const aplicarPlantilla = (plantilla) => {
     const nuevas = plantilla.tareas.map(t => ({
       id: Math.random().toString(36).substr(2, 9),
-      text: t.text,
+      texto: t.texto,
       prioridad: t.prioridad,
       done: false,
       createdAt: Date.now()
@@ -1633,7 +1633,7 @@ function TodoList({ focusActivo = false, onBonusArbol }) {
       const nuevoNivel = Math.floor(nuevoXp / XP_POR_NIVEL) + 1;
       if (nuevoNivel > nivel) {
         window.__luminaSetNotice?.(`🎉 ¡Subiste al Nivel ${nuevoNivel}! Tu bosque creció con un árbol extra.`);
-        onBonusArbol?.();
+        alBonoArbol?.();
       } else if (focusActivo) {
         window.__luminaSetNotice?.(`🔥 Bono de enfoque: +${xpGanado} XP`);
       }
@@ -1685,15 +1685,15 @@ function TodoList({ focusActivo = false, onBonusArbol }) {
           🔥 Sesión de enfoque activa · las tareas que completes ahora valen +{Math.round((BONUS_ENFOQUE - 1) * 100)}% XP
         </div>
       )}
-      <div className="todo-level">
-        <div className="todo-level-head">
-          <div className="todo-level-badge">
-            <span className="todo-level-label">LVL</span>
-            <span className="todo-level-num">{nivel}</span>
+      <div className="todo-nivel">
+        <div className="todo-nivel-head">
+          <div className="todo-nivel-badge">
+            <span className="todo-nivel-label">LVL</span>
+            <span className="todo-nivel-num">{nivel}</span>
           </div>
-          <div className="todo-level-info">
-            <span className="todo-level-name">Nivel {nivel}</span>
-            <span className="todo-level-xp">{xpEnNivel} / {XP_POR_NIVEL} XP</span>
+          <div className="todo-nivel-informacion">
+            <span className="todo-nivel-name">Nivel {nivel}</span>
+            <span className="todo-nivel-xp">{xpEnNivel} / {XP_POR_NIVEL} XP</span>
           </div>
         </div>
         <div className="todo-xp-bar">
@@ -1702,22 +1702,22 @@ function TodoList({ focusActivo = false, onBonusArbol }) {
       </div>
       <div className="todo-input-row">
         <input
-          type="text"
+          type="texto"
           className="todo-input"
-          value={nuevaTarea}
-          onChange={(e) => setNuevaTarea(e.target.value)}
+          valor={nuevaTarea}
+          onChange={(e) => setNuevaTarea(e.target.valor)}
           onKeyDown={(e) => e.key === 'Enter' && agregarTarea()}
           placeholder="¿Qué quieres lograr hoy?"
         />
         <div className={`todo-prio-wrapper prio-${nuevaPrioridad}`}>
           <select
             className="todo-prio-select"
-            value={nuevaPrioridad}
-            onChange={(e) => setNuevaPrioridad(e.target.value)}
+            valor={nuevaPrioridad}
+            onChange={(e) => setNuevaPrioridad(e.target.valor)}
           >
-            <option value="normal">● Normal</option>
-            <option value="media">◆ Media</option>
-            <option value="alta">★ Alta</option>
+            <option valor="normal">● Normal</option>
+            <option valor="media">◆ Media</option>
+            <option valor="alta">★ Alta</option>
           </select>
         </div>
         <button className="todo-add-btn" onClick={agregarTarea} title="Agregar tarea">+</button>
@@ -1731,7 +1731,7 @@ function TodoList({ focusActivo = false, onBonusArbol }) {
             {PLANTILLAS_TODO.map(p => (
               <button key={p.id} className="todo-template-item" onClick={() => aplicarPlantilla(p)}>
                 <span className="todo-template-icon">{p.icon}</span>
-                <span className="todo-template-text">
+                <span className="todo-template-texto">
                   <b>{p.label}</b>
                   <small>{p.tareas.length} tareas sugeridas</small>
                 </span>
@@ -1747,7 +1747,7 @@ function TodoList({ focusActivo = false, onBonusArbol }) {
             {['todas', 'normal', 'media', 'alta'].map(p => (
               <button
                 key={p}
-                className={`todo-chip ${filtroPrioridad === p ? 'active' : ''} ${p !== 'todas' ? `prio-${p}` : ''}`}
+                className={`todo-chip ${filtroPrioridad === p ? 'activo' : ''} ${p !== 'todas' ? `prio-${p}` : ''}`}
                 onClick={() => setFiltroPrioridad(p)}
               >
                 {p === 'todas' ? 'Todas' : PRIORIDADES[p].icon + ' ' + PRIORIDADES[p].label}
@@ -1761,7 +1761,7 @@ function TodoList({ focusActivo = false, onBonusArbol }) {
             {['todas', 'pendientes', 'listas'].map(e => (
               <button
                 key={e}
-                className={`todo-chip ${filtroEstado === e ? 'active' : ''}`}
+                className={`todo-chip ${filtroEstado === e ? 'activo' : ''}`}
                 onClick={() => setFiltroEstado(e)}
               >
                 {e === 'todas' ? 'Todas' : e === 'pendientes' ? 'Pendientes' : 'Listas'}
@@ -1770,7 +1770,7 @@ function TodoList({ focusActivo = false, onBonusArbol }) {
           </div>
         </div>
       </div>
-      <div className="todo-list">
+      <div className="todo-lista">
         {tareasFiltradas.length === 0 ? (
           <div className="todo-empty">
             <span>⌁</span>
@@ -1794,8 +1794,8 @@ function TodoList({ focusActivo = false, onBonusArbol }) {
                 >
                   {t.done ? '✓' : ''}
                 </button>
-                <div className="todo-item-content">
-                  <span className="todo-item-text">{t.text}</span>
+                <div className="todo-item-contenido">
+                  <span className="todo-item-texto">{t.texto}</span>
                   <span className={`todo-item-badge prio-${t.prioridad}`}>
                     {prio.icon} {prio.label} · +{prio.xp} XP
                   </span>
@@ -1824,46 +1824,46 @@ function TodoList({ focusActivo = false, onBonusArbol }) {
 let setNoticeGlobal = () => {};
 if (typeof window !== 'undefined') {
   window.__luminaSetNotice = (msg) => {
-    window.dispatchEvent(new CustomEvent('lumina-notice', { detail: msg }));
+    window.dispatchEvent(new CustomEvent('lumina-aviso', { detail: msg }));
   };
   setNoticeGlobal = (msg) => window.__luminaSetNotice?.(msg);
 }
 function useGlobalNotice(setter) {
   useEffect(() => {
     const handler = (e) => setter(e.detail);
-    window.addEventListener('lumina-notice', handler);
-    return () => window.removeEventListener('lumina-notice', handler);
+    window.addEventListener('lumina-aviso', handler);
+    return () => window.removeEventListener('lumina-aviso', handler);
   }, [setter]);
 }
 
-function StudyPickerModal({ materias, materiaId, materials, activeMaterial, onChooseMateria, onChooseMaterial, onAddMaterial, onRemoveMaterial, onPreviewMaterial, onCreateMateria, onConfirm, onClose }) {
+function ModalSelectorEstudio({ materias, materiaId, materiales, materialActivo, alElegirMateria, alElegirMaterial, alAgregarMaterial, alQuitarMaterial, alVistaPreviaMaterial, alCrearMateria, alConfirmar, alCerrar }) {
   return (
     <div className="modal-backdrop">
       <section style={{ width: 'min(620px,100%)', maxHeight: '86vh', overflow: 'auto', background: 'var(--bg-elevated)', borderRadius: 20, padding: '32px 34px', position: 'relative', boxShadow: 'var(--shadow-modal)' }}>
-        <button className="close" onClick={onClose}>×</button>
+        <button className="close" onClick={alCerrar}>×</button>
         <p className="eyebrow">{materiaId ? 'ELEGÍ EL CUADERNO' : 'ELEGÍ LA MATERIA'}</p>
         <h2 style={{ font: "600 22px 'Playfair Display'", margin: '0 0 6px' }}>{materiaId ? 'Elige el cuaderno con el que vas a estudiar' : '¿Qué materia vas a estudiar?'}</h2>
         <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 20 }}>{materiaId ? 'Puedes agregar más material si hace falta.' : 'Elige una materia para ver sus cuadernos, o crea una nueva.'}</p>
         {!materiaId ? (
           <div className="method-grid" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
             {materias.map(mat =>
-              <button className="method-card" onClick={() => onChooseMateria(mat.id)} key={mat.id}>
+              <button className="method-card" onClick={() => alElegirMateria(mat.id)} key={mat.id}>
                 <i>▤</i> <strong>{mat.nombre}</strong> <span>Ver cuadernos</span>
               </button>
             )}
-            <button className="method-card" onClick={onCreateMateria}>
+            <button className="method-card" onClick={alCrearMateria}>
               <i>+</i> <strong>Nueva materia</strong> <span>Crea una carpeta nueva</span>
             </button>
           </div>
         ) : (
           <>
-            <button className="back" onClick={() => onChooseMateria(null)} style={{ marginBottom: 14 }}>← Cambiar de materia</button>
-            <div className="material-list">
-              {materials.length ? materials.map((m, i) =>
-                <div className="material" key={i} onClick={() => onChooseMaterial(m)} onDoubleClick={() => onPreviewMaterial(m)} title="Doble clic para ver una vista previa" style={{ cursor: 'pointer', outline: activeMaterial?.id === m.id ? '2px solid #cdc4f2' : 'none', borderRadius: activeMaterial?.id === m.id ? '8px' : 0 }}>
+            <button className="back" onClick={() => alElegirMateria(null)} style={{ marginBottom: 14 }}>← Cambiar de materia</button>
+            <div className="material-lista">
+              {materiales.length ? materiales.map((m, i) =>
+                <div className="material" key={i} onClick={() => alElegirMaterial(m)} onDoubleClick={() => alVistaPreviaMaterial(m)} title="Doble clic para ver una vista previa" style={{ cursor: 'pointer', outline: materialActivo?.id === m.id ? '2px solid #cdc4f2' : 'none', borderRadius: materialActivo?.id === m.id ? '8px' : 0 }}>
                   <i>{m.type === 'PDF' ? 'PDF' : 'TXT'}</i>
-                  <span> <b>{m.name}</b> <small>{m.type} · {m.size}{activeMaterial?.id === m.id ? ' · Seleccionado' : ''}</small> </span>
-                  <button onClick={(e) => { e.stopPropagation(); onRemoveMaterial(m) }}>⋯</button>
+                  <span> <b>{m.name}</b> <small>{m.type} · {m.size}{materialActivo?.id === m.id ? ' · Seleccionado' : ''}</small> </span>
+                  <button onClick={(e) => { e.stopPropagation(); alQuitarMaterial(m) }}>⋯</button>
                 </div>
               ) : (
                 <div className="empty-material">
@@ -1872,8 +1872,8 @@ function StudyPickerModal({ materias, materiaId, materials, activeMaterial, onCh
                 </div>
               )}
             </div>
-            <label className="upload-link study-add-btn" style={{ marginTop: 14 }}>+ Agregar material <input type="file" accept=".pdf,.txt,.md" multiple onChange={onAddMaterial} /></label>
-            <button className="primary wide" style={{ marginTop: 20, opacity: activeMaterial ? 1 : .5, cursor: activeMaterial ? 'pointer' : 'not-allowed' }} disabled={!activeMaterial} onClick={onConfirm}>Comenzar a estudiar →</button>
+            <label className="upload-link study-add-btn" style={{ marginTop: 14 }}>+ Agregar material <input type="file" accept=".pdf,.txt,.md" multiple onChange={alAgregarMaterial} /></label>
+            <button className="primary wide" style={{ marginTop: 20, opacity: materialActivo ? 1 : .5, cursor: materialActivo ? 'pointer' : 'not-allowed' }} disabled={!materialActivo} onClick={alConfirmar}>Comenzar a estudiar →</button>
           </>
         )}
       </section>
@@ -1881,47 +1881,47 @@ function StudyPickerModal({ materias, materiaId, materials, activeMaterial, onCh
   )
 }
 
-function MateriaModal({ mode, initialName, onSubmit, onClose }) {
+function ModalMateria({ modo, initialName, alEnviar, alCerrar }) {
   const [name, setName] = useState(initialName || '')
-  const submit = () => { const n = name.trim(); if (n) { onSubmit(n); onClose() } }
+  const submit = () => { const n = name.trim(); if (n) { alEnviar(n); alCerrar() } }
   return (
     <div className="modal-backdrop">
       <section className="key-modal">
-        <button className="close" onClick={onClose}>×</button>
+        <button className="close" onClick={alCerrar}>×</button>
         <span className="modal-icon">▤</span>
-        <p className="eyebrow">{mode === 'rename' ? 'RENOMBRAR MATERIA' : 'NUEVA MATERIA'}</p>
-        {mode === 'rename'
+        <p className="eyebrow">{modo === 'rename' ? 'RENOMBRAR MATERIA' : 'NUEVA MATERIA'}</p>
+        {modo === 'rename'
           ? <h2>Cambia el nombre <br /><em>de esta materia</em></h2>
           : <h2>Crea una carpeta <br /><em>para tus cuadernos</em></h2>}
-        <p>{mode === 'rename' ? 'Los cuadernos que ya subiste se mantienen igual, solo cambia el nombre.' : 'Cada materia guarda su propio material: lo que subas acá no se mezclará con el de otras materias.'}</p>
-        <label>Nombre de la materia <input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Historia, Anatomía..." autoFocus onKeyDown={e => e.key === 'Enter' && submit()} /></label>
-        <button className="primary wide" onClick={submit}>{mode === 'rename' ? 'Guardar nombre →' : 'Crear materia →'}</button>
+        <p>{modo === 'rename' ? 'Los cuadernos que ya subiste se mantienen igual, solo cambia el nombre.' : 'Cada materia guarda su propio material: lo que subas acá no se mezclará con el de otras materias.'}</p>
+        <label>Nombre de la materia <input valor={name} onChange={e => setName(e.target.valor)} placeholder="Ej: Historia, Anatomía..." autoFocus onKeyDown={e => e.key === 'Enter' && submit()} /></label>
+        <button className="primary wide" onClick={submit}>{modo === 'rename' ? 'Guardar nombre →' : 'Crear materia →'}</button>
       </section>
     </div>
   )
 }
 
-function KeyModal({ value, setValue, provider, setProvider, model, setModel, baseUrl, setBaseUrl, localModels, localModelsFetching, localModelsError, onFetchLocalModels, onSave, onClose }) {
-  const info = providerInfo(provider);
+function ModalClave({ valor, establecerValor, provider, setProvider, model, setModel, baseUrl, setBaseUrl, modelosLocales, modelosLocalesObteniendo, modelosLocalesError, alObtenerModelosLocales, alGuardar, alCerrar }) {
+  const informacion = providerInfo(provider);
   const models = AI_MODELS[provider] || [];
   const isCustom = provider === 'openai_compatible';
   const onProviderChange = (id) => {
     setProvider(id);
-    const list = AI_MODELS[id] || [];
+    const lista = AI_MODELS[id] || [];
     if (id === 'openai_compatible') { setModel(''); return }
-    if (!list.find(x => x.id === model)) setModel(list[0]?.id || '');
+    if (!lista.find(x => x.id === model)) setModel(lista[0]?.id || '');
   }
   return (
     <div className="modal-backdrop">
       <section className="key-modal">
-        <button className="close" onClick={onClose}>×</button>
+        <button className="close" onClick={alCerrar}>×</button>
         <span className="modal-icon">◇</span>
         <p className="eyebrow">CONFIGURACIÓN PERSONAL</p>
         <h2>Conecta tu propia <br /><em>IA con tu API Key</em></h2>
         <p>La clave se guarda únicamente en el almacenamiento de este navegador. Nunca la enviamos a un servidor.</p>
         <label>Proveedor de IA
-          <select value={provider} onChange={e => onProviderChange(e.target.value)} style={{ width: '100%', marginTop: 6, border: '1px solid var(--line-soft)', borderRadius: 8, padding: 12, background: 'var(--bg-surface-alt)', color: 'var(--ink)' }}>
-            {AI_PROVIDERS.map(p => <option key={p.id} value={p.id}>{p.label} · {p.sub}</option>)}
+          <select valor={provider} onChange={e => onProviderChange(e.target.valor)} style={{ width: '100%', marginTop: 6, border: '1px solid var(--line-soft)', borderRadius: 8, padding: 12, background: 'var(--bg-surface-alt)', color: 'var(--ink)' }}>
+            {AI_PROVIDERS.map(p => <option key={p.id} valor={p.id}>{p.label} · {p.sub}</option>)}
           </select>
         </label>
         {isCustom ? (
@@ -1929,40 +1929,40 @@ function KeyModal({ value, setValue, provider, setProvider, model, setModel, bas
             <label>URL del servidor (LM Studio / Ollama)
               <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                 <input
-                  value={baseUrl}
+                  valor={baseUrl}
                   placeholder="http://localhost:1234"
-                  onChange={e => setBaseUrl(e.target.value)}
+                  onChange={e => setBaseUrl(e.target.valor)}
                   style={{ flex: 1 }}
                 />
                 <button
                   type="button"
-                  onClick={onFetchLocalModels}
-                  disabled={localModelsFetching}
-                  style={{ background: 'var(--bg-soft)', border: '1px solid var(--line-soft)', borderRadius: 8, padding: '0 14px', fontSize: 12, fontWeight: 600, color: 'var(--violet)', whiteSpace: 'nowrap', cursor: localModelsFetching ? 'not-allowed' : 'pointer', opacity: localModelsFetching ? 0.6 : 1 }}
+                  onClick={alObtenerModelosLocales}
+                  disabled={modelosLocalesObteniendo}
+                  style={{ background: 'var(--bg-soft)', border: '1px solid var(--line-soft)', borderRadius: 8, padding: '0 14px', fontSize: 12, fontWeight: 600, color: 'var(--violet)', whiteSpace: 'nowrap', cursor: modelosLocalesObteniendo ? 'not-allowed' : 'pointer', opacity: modelosLocalesObteniendo ? 0.6 : 1 }}
                 >
-                  {localModelsFetching ? '…' : '↻ Cargar modelos'}
+                  {modelosLocalesObteniendo ? '…' : '↻ Cargar modelos'}
                 </button>
               </div>
             </label>
-            {localModelsError && (
+            {modelosLocalesError && (
               <p style={{ fontSize: 12, color: 'var(--danger)', background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', borderRadius: 8, padding: '8px 12px', margin: '0 0 4px' }}>
-                {localModelsError}
+                {modelosLocalesError}
               </p>
             )}
             <label>Modelo activo
-              {localModels.length > 0 ? (
+              {modelosLocales.length > 0 ? (
                 <select
-                  value={model}
-                  onChange={e => setModel(e.target.value)}
+                  valor={model}
+                  onChange={e => setModel(e.target.valor)}
                   style={{ width: '100%', marginTop: 6, border: '1px solid var(--line-soft)', borderRadius: 8, padding: 12, background: 'var(--bg-surface-alt)', color: 'var(--ink)', cursor: 'pointer' }}
                 >
-                  {localModels.map(id => <option key={id} value={id}>{id}</option>)}
+                  {modelosLocales.map(id => <option key={id} valor={id}>{id}</option>)}
                 </select>
               ) : (
                 <input
-                  value={model}
+                  valor={model}
                   placeholder="Cargá los modelos con el botón, o escribí el nombre"
-                  onChange={e => setModel(e.target.value)}
+                  onChange={e => setModel(e.target.valor)}
                   style={{ marginTop: 6 }}
                 />
               )}
@@ -1973,41 +1973,41 @@ function KeyModal({ value, setValue, provider, setProvider, model, setModel, bas
               </p>
             )}
             <label>API Key (opcional — usa "lm-studio" si no configuraste una)
-              <input type="text" value={value} placeholder="lm-studio" onChange={e => setValue(e.target.value)} style={{ marginTop: 6 }} />
+              <input type="texto" valor={valor} placeholder="lm-studio" onChange={e => establecerValor(e.target.valor)} style={{ marginTop: 6 }} />
             </label>
           </>
         ) : (
           <>
             <label>Versión del modelo
-              <select value={model} onChange={e => setModel(e.target.value)} style={{ width: '100%', marginTop: 6, border: '1px solid var(--line-soft)', borderRadius: 8, padding: 12, background: 'var(--bg-surface-alt)', color: 'var(--ink)' }}>
-                {models.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+              <select valor={model} onChange={e => setModel(e.target.valor)} style={{ width: '100%', marginTop: 6, border: '1px solid var(--line-soft)', borderRadius: 8, padding: 12, background: 'var(--bg-surface-alt)', color: 'var(--ink)' }}>
+                {models.map(m => <option key={m.id} valor={m.id}>{m.label}</option>)}
               </select>
             </label>
-            <label>API Key de {info.label} <input type="password" value={value} placeholder={info.placeholder} onChange={e => setValue(e.target.value)} autoFocus /></label>
+            <label>API Key de {informacion.label} <input type="password" valor={valor} placeholder={informacion.placeholder} onChange={e => establecerValor(e.target.valor)} autoFocus /></label>
           </>
         )}
-        <button className="primary wide" onClick={onSave}>Guardar y validar →</button>
-        {info.helpUrl && <small>¿No tienes una cuenta? <a href={info.helpUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--violet)', textDecoration: 'underline' }}>{info.helpLabel}</a></small>}
+        <button className="primary wide" onClick={alGuardar}>Guardar y validar →</button>
+        {informacion.helpUrl && <small>¿No tienes una cuenta? <a href={informacion.helpUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--violet)', textDecoration: 'underline' }}>{informacion.helpLabel}</a></small>}
       </section>
     </div>
   )
 }
 
-function SettingsModal({ value, setValue, onSave, onClose }) {
-  const update = (field) => (e) => setValue(v => ({ ...v, [field]: e.target.value }))
+function ModalConfiguracion({ valor, establecerValor, alGuardar, alCerrar }) {
+  const update = (field) => (e) => establecerValor(v => ({ ...v, [field]: e.target.valor }))
   return (
     <div className="modal-backdrop">
       <section className="key-modal">
-        <button className="close" onClick={onClose}>×</button>
+        <button className="close" onClick={alCerrar}>×</button>
         <span className="modal-icon">⚙</span>
         <p className="eyebrow">AJUSTES DE ENFOQUE</p>
         <h2>Personaliza tu <br /><em>ciclo Pomodoro</em></h2>
         <p>Configura la duración de cada bloque de enfoque y de descanso.</p>
-        <label>Minutos de enfoque <input type="number" min="1" max="180" value={value.study} onChange={update('study')} autoFocus /></label>
-        <label>Minutos de descanso corto <input type="number" min="1" max="60" value={value.short} onChange={update('short')} /></label>
-        <label>Minutos de descanso largo <input type="number" min="1" max="90" value={value.long} onChange={update('long')} /></label>
-        <label>Sesiones de enfoque antes del descanso largo <input type="number" min="1" max="12" value={value.cycle} onChange={update('cycle')} /></label>
-        <button className="primary wide" onClick={onSave}>Guardar ajustes →</button>
+        <label>Minutos de enfoque <input type="number" min="1" max="180" valor={valor.study} onChange={update('study')} autoFocus /></label>
+        <label>Minutos de descanso corto <input type="number" min="1" max="60" valor={valor.short} onChange={update('short')} /></label>
+        <label>Minutos de descanso largo <input type="number" min="1" max="90" valor={valor.long} onChange={update('long')} /></label>
+        <label>Sesiones de enfoque antes del descanso largo <input type="number" min="1" max="12" valor={valor.cycle} onChange={update('cycle')} /></label>
+        <button className="primary wide" onClick={alGuardar}>Guardar ajustes →</button>
         <small>Se aplica a partir de tu próxima sesión sin interrumpir un enfoque en curso.</small>
       </section>
     </div>
@@ -2072,7 +2072,7 @@ function cargarPdfJs() {
           s.src = fuente.lib;
           s.onload = () => {
             // Verificar si window.pdfjsLib se definió realmente
-            // (evita aceptar index.html con status 200 en Vite cuando el archivo no existe)
+            // (evita aceptar indice.html con status 200 en Vite cuando el archivo no existe)
             if (window.pdfjsLib) {
               resolve(s);
             } else {
@@ -2090,7 +2090,7 @@ function cargarPdfJs() {
         }
       } catch (err) {
         ultimoError = err;
-        console.warn(`⚠ Carga fallida (${fuente.nombre}):`, err.message);
+        console.warn(`⚠ Carga fallida (${fuente.nombre}):`, err.mensaje);
       }
     }
 
@@ -2101,16 +2101,16 @@ function cargarPdfJs() {
   return pdfjsCargaPromise;
 }
 
-function PdfPreview({ data, nombre }) {
+function VistaPreviaPdf({ datos, nombre }) {
   const contenedorRef = useRef(null);
   const [estado, setEstado] = useState('cargando');
   useEffect(() => {
     let cancelado = false;
     setEstado('cargando');
     cargarPdfJs()
-      .then((pdfjsLib) => pdfjsLib.getDocument({ data: base64ABytes(data) }).promise)
+      .then((pdfjsLib) => pdfjsLib.getDocument({ datos: base64ABytes(datos) }).promise)
       .then(async (pdf) => {
-        const contenedor = contenedorRef.current;
+        const contenedor = contenedorRef.actual;
         if (cancelado || !contenedor) return;
         contenedor.innerHTML = '';
         const anchoDisponible = contenedor.clientWidth || 600;
@@ -2133,7 +2133,7 @@ function PdfPreview({ data, nombre }) {
         if (!cancelado) setEstado('error');
       });
     return () => { cancelado = true };
-  }, [data]);
+  }, [datos]);
   
   if (estado === 'error') {
     return (
@@ -2151,33 +2151,33 @@ function PdfPreview({ data, nombre }) {
   )
 }
 
-function MaterialPreviewModal({ material, onClose, onReplace }) {
+function ModalVistaPreviaMaterial({ material, alCerrar, alReemplazar }) {
   const isPdf = (material.mimeType || '').includes('pdf');
-  const [text, setText] = useState('');
+  const [texto, establecerTexto] = useState('');
   const [replacing, setReplacing] = useState(false);
   useEffect(() => {
     if (isPdf) return;
-    setText(decodeTextFromBase64(material.data));
+    establecerTexto(decodeTextFromBase64(material.datos));
   }, [material, isPdf]);
 
-  const charCount = text.length;
-  const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const charCount = texto.length;
+  const wordCount = texto.trim() ? texto.trim().split(/\s+/).length : 0;
 
   const handleReplaceFile = async (e) => {
     const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file || !onReplace) return;
+    e.target.valor = '';
+    if (!file || !alReemplazar) return;
     setReplacing(true);
-    try { await onReplace(material, file) } finally { setReplacing(false) }
+    try { await alReemplazar(material, file) } finally { setReplacing(false) }
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" onClick={alCerrar}>
       <section
         style={{ width: 'min(760px,100%)', height: 'min(80vh,720px)', background: 'var(--bg-elevated)', borderRadius: 20, padding: '26px 28px', position: 'relative', boxShadow: 'var(--shadow-modal)', display: 'flex', flexDirection: 'column' }}
         onClick={e => e.stopPropagation()}
       >
-        <button className="close" onClick={onClose}>×</button>
+        <button className="close" onClick={alCerrar}>×</button>
         <p className="eyebrow" style={{ margin: 0 }}>VISTA PREVIA</p>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, paddingRight: 30 }}>
           <div>
@@ -2189,7 +2189,7 @@ function MaterialPreviewModal({ material, onClose, onReplace }) {
               </p>
             )}
           </div>
-          {onReplace && (
+          {alReemplazar && (
             <label className="plain-link" style={{ whiteSpace: 'nowrap', cursor: replacing ? 'not-allowed' : 'pointer', opacity: replacing ? 0.6 : 1 }}>
               {replacing ? 'Actualizando…' : '🔄 Reemplazar archivo'}
               <input type="file" accept=".pdf,.txt,.md" onChange={handleReplaceFile} disabled={replacing} style={{ display: 'none' }} />
@@ -2198,9 +2198,9 @@ function MaterialPreviewModal({ material, onClose, onReplace }) {
         </div>
         <div style={{ flex: 1, minHeight: 0, overflow: 'auto', border: '1px solid var(--line-soft)', borderRadius: 12, background: 'var(--bg-surface-alt)', marginTop: 10 }}>
           {isPdf
-            ? <PdfPreview data={material.data} nombre={material.name} />
-            : text
-              ? <pre style={{ margin: 0, padding: 16, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12.5, lineHeight: 1.6, color: 'var(--ink)', fontFamily: 'inherit' }}>{text}</pre>
+            ? <VistaPreviaPdf datos={material.datos} nombre={material.name} />
+            : texto
+              ? <pre style={{ margin: 0, padding: 16, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12.5, lineHeight: 1.6, color: 'var(--ink)', fontFamily: 'inherit' }}>{texto}</pre>
               : <p style={{ padding: 16, margin: 0, fontSize: 12, color: 'var(--danger)' }}>No pudimos leer el contenido de este archivo. Probá reemplazarlo desde el botón de arriba.</p>}
         </div>
       </section>
@@ -2226,7 +2226,7 @@ const escapeHtml = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '
 // Abre una ventana con HTML listo para imprimir (el usuario elige "Guardar como PDF"
 // en el diálogo de impresión del navegador). No depende de librerías externas.
 function abrirVentanaImprimible(titulo, bodyHtml) {
-  const win = window.open('', '_blank');
+  const win = window.abierto('', '_blank');
   if (!win) { alert('Tu navegador bloqueó la ventana emergente. Habilitala para poder exportar a PDF.'); return; }
   win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(titulo)}</title>
     <style>
@@ -2236,7 +2236,7 @@ function abrirVentanaImprimible(titulo, bodyHtml) {
       ul { margin: 4px 0 10px 0; }
       li { margin-bottom: 4px; line-height: 1.5; }
       .hoja { page-break-inside: avoid; border: 1px solid #ccc; border-radius: 8px; padding: 14px 18px; margin-bottom: 18px; }
-      .campo-titulo { font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.4px; color: #7766c9; margin: 10px 0 4px; }
+      .campo-titulo { font-weight: 700; font-size: 13px; texto-transform: uppercase; letter-spacing: 0.4px; color: #7766c9; margin: 10px 0 4px; }
       .resumen { background: #f5f2fc; border-radius: 6px; padding: 8px 12px; margin-top: 8px; }
       b { color: #a86b1c; }
       @media print { body { padding: 0; } }
@@ -2287,7 +2287,7 @@ function exportarFlashcardsAnki(banco, nombre) {
     const back = String(c.r ?? '').replace(/\t/g, ' ').replace(/\n/g, '<br>');
     return `${front}\t${back}`;
   });
-  const blob = new Blob([lineas.join('\n')], { type: 'text/plain;charset=utf-8' });
+  const blob = new Blob([lineas.join('\n')], { type: 'texto/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = `${(nombre || 'flashcards').replace(/[^a-z0-9-_]+/gi, '_')}_anki.txt`;
@@ -2306,7 +2306,7 @@ function posicionRelativa(el, contenedor, zoom = 1) {
   };
 }
 
-function MapaRama({ nodo, nivel, id, registrarRef }) {
+function RamaMapa({ nodo, nivel, id, registrarRef }) {
   if (!nodo) return null;
   return (
     <div className="mm-nivel">
@@ -2316,7 +2316,7 @@ function MapaRama({ nodo, nivel, id, registrarRef }) {
       {nodo.hijos && nodo.hijos.length > 0 && (
         <div className="mm-hijos">
           {nodo.hijos.map((hijo, i) => (
-            <MapaRama nodo={hijo} nivel={nivel + 1} id={`${id}-${i}`} registrarRef={registrarRef} key={i} />
+            <RamaMapa nodo={hijo} nivel={nivel + 1} id={`${id}-${i}`} registrarRef={registrarRef} key={i} />
           ))}
         </div>
       )}
@@ -2324,7 +2324,7 @@ function MapaRama({ nodo, nivel, id, registrarRef }) {
   )
 }
 
-function MapaView({ datos }) {
+function VistaMapa({ datos }) {
   const contenedorRef = useRef(null);
   const scrollRef = useRef(null);
   const svgRef = useRef(null);
@@ -2333,7 +2333,7 @@ function MapaView({ datos }) {
   const [zoom, setZoom] = useState(1);
   const MIN_ZOOM = 0.3, MAX_ZOOM = 2.5, ZOOM_STEP = 0.15;
 
-  const registrarRef = (id, el) => { if (el) nodosRef.current[id] = el; else delete nodosRef.current[id]; };
+  const registrarRef = (id, el) => { if (el) nodosRef.actual[id] = el; else delete nodosRef.actual[id]; };
   const enlaces = useMemo(() => {
     const acc = [];
     const recorrer = (nodo, id, parentId) => {
@@ -2347,7 +2347,7 @@ function MapaView({ datos }) {
   
   useEffect(() => {
     function dibujar() {
-      const contenedor = contenedorRef.current, svg = svgRef.current;
+      const contenedor = contenedorRef.actual, svg = svgRef.actual;
       if (!contenedor || !svg) return;
       const w = contenedor.scrollWidth;
       const h = contenedor.scrollHeight;
@@ -2356,7 +2356,7 @@ function MapaView({ datos }) {
       svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
       const nuevasLineas = [];
       enlaces.forEach(({ id, parentId }) => {
-        const padreEl = nodosRef.current[parentId], hijoEl = nodosRef.current[id];
+        const padreEl = nodosRef.actual[parentId], hijoEl = nodosRef.actual[id];
         if (!padreEl || !hijoEl) return;
         const p = posicionRelativa(padreEl, contenedor, zoom);
         const c = posicionRelativa(hijoEl, contenedor, zoom);
@@ -2377,7 +2377,7 @@ function MapaView({ datos }) {
   }, [enlaces, zoom]);
   
   useEffect(() => {
-    const el = scrollRef.current;
+    const el = scrollRef.actual;
     if (!el) return;
     const centrar = () => { el.scrollLeft = Math.max(0, (el.scrollWidth - el.clientWidth) / 2); };
     const raf = requestAnimationFrame(centrar);
@@ -2386,7 +2386,7 @@ function MapaView({ datos }) {
 
   // Zoom con rueda del mouse / trackpad (Ctrl+scroll o pinch)
   useEffect(() => {
-    const el = scrollRef.current;
+    const el = scrollRef.actual;
     if (!el) return;
     const onWheel = (e) => {
       if (!e.ctrlKey && !e.metaKey) return;
@@ -2417,7 +2417,7 @@ function MapaView({ datos }) {
             {lineas.map((d, i) => <path key={i} d={d} fill="none" stroke="#a89bdc" strokeWidth="2.5" />)}
           </svg>
           <div className="mm-nodos">
-            <MapaRama nodo={datos} nivel={0} id="r" registrarRef={registrarRef} />
+            <RamaMapa nodo={datos} nivel={0} id="r" registrarRef={registrarRef} />
           </div>
         </div>
       </div>
@@ -2425,7 +2425,7 @@ function MapaView({ datos }) {
   )
 }
 
-// Coerces a value to an array of strings, handling the common case where
+// Coerces a valor to an array of strings, handling the common case where
 // the AI returns a plain string instead of a single-element array.
 const toStrArr = (v) => {
   if (!v) return []
@@ -2433,7 +2433,7 @@ const toStrArr = (v) => {
   return [String(v)]
 }
 
-function CornellView({ datos }) {
+function VistaCornell({ datos }) {
   if (!datos) return null;
   const hojas = Array.isArray(datos.hojas) ? datos.hojas : datos.hojas ? [datos.hojas] : [];
   const stickers = Array.isArray(datos.stickers) ? datos.stickers : [];
@@ -2450,7 +2450,7 @@ function CornellView({ datos }) {
       {hojas.map((h, i) => {
         if (!h) return null;
         const tinte = tintesBase[i % tintesBase.length];
-        const tinteFinal = document.documentElement.getAttribute('data-theme') === 'dark' ? 'var(--bg-soft)' : tinte;
+        const tinteFinal = document.documentElement.getAttribute('datos-tema') === 'dark' ? 'var(--bg-soft)' : tinte;
         const ideasClave = toStrArr(h.ideasClave);
         const notas = toStrArr(h.notas);
         const resumen = toStrArr(h.resumen);
@@ -2491,8 +2491,8 @@ function CornellView({ datos }) {
   )
 }
 
-const renderFeynmanMD = (text) => {
-  const raw = String(text ?? '').trim();
+const renderFeynmanMD = (texto) => {
+  const raw = String(texto ?? '').trim();
   if (!raw) return '';
   const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   return raw.split(/\n\s*\n/).map(block => {
@@ -2507,7 +2507,7 @@ const renderFeynmanMD = (text) => {
   }).join('');
 }
 
-function FeynmanView({ datos }) {
+function VistaFeynman({ datos }) {
   if (!datos) return null;
   const puntos = datos.paso3_lagunas_y_puntos_clave || [];
   return (
@@ -2518,19 +2518,19 @@ function FeynmanView({ datos }) {
       </div>
 
       <div className="fy-card">
-        <div className="fy-card-top"><span className="fy-step">PASO 1 · CONCEPTO CLAVE</span></div>
+        <div className="fy-card-top"><span className="fy-paso">PASO 1 · CONCEPTO CLAVE</span></div>
         <div className="fy-card-title">Concepto Central</div>
-        <div className="fy-content" dangerouslySetInnerHTML={{ __html: renderFeynmanMD(datos.paso1_concepto) }} />
+        <div className="fy-contenido" dangerouslySetInnerHTML={{ __html: renderFeynmanMD(datos.paso1_concepto) }} />
       </div>
 
       <div className="fy-card">
-        <div className="fy-card-top"><span className="fy-step">PASO 2 · EXPLICACIÓN SENCILLA</span></div>
+        <div className="fy-card-top"><span className="fy-paso">PASO 2 · EXPLICACIÓN SENCILLA</span></div>
         <div className="fy-card-title">¿Cómo se lo explicarías a un niño?</div>
-        <div className="fy-content" dangerouslySetInnerHTML={{ __html: renderFeynmanMD(datos.paso2_explicacion_simple) }} />
+        <div className="fy-contenido" dangerouslySetInnerHTML={{ __html: renderFeynmanMD(datos.paso2_explicacion_simple) }} />
       </div>
 
       <div className="fy-card">
-        <div className="fy-card-top"><span className="fy-step">PASO 3 · PUNTOS CRÍTICOS REFORZADOS</span></div>
+        <div className="fy-card-top"><span className="fy-paso">PASO 3 · PUNTOS CRÍTICOS REFORZADOS</span></div>
         <div className="fy-card-title">Engranajes y Detalles Fundamentales</div>
         <div>
           {puntos.map((p, i) => (
@@ -2543,15 +2543,15 @@ function FeynmanView({ datos }) {
       </div>
 
       <div className="fy-card fy-green">
-        <div className="fy-card-top"><span className="fy-step">PASO 4 · SÍNTESIS Y ANALOGÍA</span></div>
+        <div className="fy-card-top"><span className="fy-paso">PASO 4 · SÍNTESIS Y ANALOGÍA</span></div>
         <div className="fy-card-title">Regla de Memoria</div>
-        <div className="fy-content" dangerouslySetInnerHTML={{ __html: renderFeynmanMD(datos.paso4_analogia_y_resumen) }} />
+        <div className="fy-contenido" dangerouslySetInnerHTML={{ __html: renderFeynmanMD(datos.paso4_analogia_y_resumen) }} />
       </div>
     </div>
   )
 }
 
-function SpacedRepetitionView({ banco }) {
+function VistaRepeticionEspaciada({ banco }) {
   const STORAGE_KEY = 'lumina-sr-deck-v2';
 
   const initDeck = () => {
@@ -2564,7 +2564,7 @@ function SpacedRepetitionView({ banco }) {
         if (savedIds === bancoIds) return saved;
       }
     } catch {}
-    return banco.map((c, i) => ({ id: i + 1, front: c.p, back: c.r, level: 0, dueDate: 0 }));
+    return banco.map((c, i) => ({ id: i + 1, front: c.p, back: c.r, nivel: 0, dueDate: 0 }));
   };
 
   const [deck, setDeckState] = useState(initDeck);
@@ -2591,13 +2591,13 @@ function SpacedRepetitionView({ banco }) {
   }, []);
 
   const now = Date.now();
-  const newCount = deck.filter(c => c.level === 0).length;
-  const dueCount = deck.filter(c => c.dueDate <= now && c.level > 0).length;
+  const newCount = deck.filter(c => c.nivel === 0).length;
+  const dueCount = deck.filter(c => c.dueDate <= now && c.nivel > 0).length;
   const doneCount = deck.filter(c => c.dueDate > now).length;
 
   const boxCounts = { 1: 0, 2: 0, 3: 0, 4: 0 };
   deck.forEach(c => {
-    if (c.level > 0) { const b = Math.min(c.level, 4); boxCounts[b]++; }
+    if (c.nivel > 0) { const b = Math.min(c.nivel, 4); boxCounts[b]++; }
   });
 
   const handleFlip = () => {
@@ -2612,13 +2612,13 @@ function SpacedRepetitionView({ banco }) {
     const ONE_DAY = 24 * 60 * 60 * 1000;
     let addDays = 0;
     const updated = { ...currentCard };
-    if (updated.level === 0) updated.level = 1;
+    if (updated.nivel === 0) updated.nivel = 1;
 
     switch (quality) {
-      case 'again': updated.level = 1; addDays = 0; break;
-      case 'hard':  addDays = 1; updated.level += 1; break;
-      case 'good':  addDays = updated.level * 2; updated.level += 2; break;
-      case 'easy':  addDays = updated.level * 4; updated.level += 3; break;
+      case 'again': updated.nivel = 1; addDays = 0; break;
+      case 'hard':  addDays = 1; updated.nivel += 1; break;
+      case 'good':  addDays = updated.nivel * 2; updated.nivel += 2; break;
+      case 'easy':  addDays = updated.nivel * 4; updated.nivel += 3; break;
     }
 
     let newQueue = [...dueQueue];
@@ -2644,7 +2644,7 @@ function SpacedRepetitionView({ banco }) {
   };
 
   const resetDeck = () => {
-    const fresh = deck.map(c => ({ ...c, level: 0, dueDate: 0 }));
+    const fresh = deck.map(c => ({ ...c, nivel: 0, dueDate: 0 }));
     saveDeck(fresh);
     setDeckState(fresh);
     const q = fresh;
@@ -2654,7 +2654,7 @@ function SpacedRepetitionView({ banco }) {
     setShowEval(false);
   };
 
-  const lvl = currentCard ? (currentCard.level === 0 ? 1 : currentCard.level) : 1;
+  const lvl = currentCard ? (currentCard.nivel === 0 ? 1 : currentCard.nivel) : 1;
 
   if (!banco || !banco.length) return <p style={{ fontSize: 12, color: 'var(--muted)' }}>La IA no devolvió tarjetas para este material.</p>;
 
@@ -2728,13 +2728,13 @@ function SpacedRepetitionView({ banco }) {
         <p style={{ fontSize: 10, fontFamily: 'DM Mono, monospace', letterSpacing: '1.2px', color: 'var(--muted-2)', textTransform: 'uppercase', marginBottom: 8 }}>DISTRIBUCIÓN DEL MAZO · SISTEMA LEITNER</p>
         <div className="leitner">
           {[
-            { label: 'Caja 1 · Aprendizaje', bg: 'var(--danger-bg)', count: boxCounts[1] },
-            { label: 'Caja 2 · En Progreso',  bg: 'var(--bg-soft)',   count: boxCounts[2] },
-            { label: 'Caja 3 · Retención',    bg: 'var(--amber-bg)',  count: boxCounts[3] },
-            { label: 'Caja 4+ · Dominio',     bg: 'var(--mint)',      count: boxCounts[4] },
+            { label: 'Caja 1 · Aprendizaje', bg: 'var(--danger-bg)', contador: boxCounts[1] },
+            { label: 'Caja 2 · En Progreso',  bg: 'var(--bg-soft)',   contador: boxCounts[2] },
+            { label: 'Caja 3 · Retención',    bg: 'var(--amber-bg)',  contador: boxCounts[3] },
+            { label: 'Caja 4+ · Dominio',     bg: 'var(--mint)',      contador: boxCounts[4] },
           ].map((box, i) => (
             <div key={i} style={{ background: box.bg }}>
-              <b style={{ font: '600 28px Playfair Display', display: 'block', color: 'var(--violet)' }}>{box.count}</b>
+              <b style={{ font: '600 28px Playfair Display', display: 'block', color: 'var(--violet)' }}>{box.contador}</b>
               <span style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', fontFamily: 'DM Mono, monospace', letterSpacing: 1 }}>{box.label}</span>
             </div>
           ))}
@@ -2744,7 +2744,7 @@ function SpacedRepetitionView({ banco }) {
   );
 }
 
-function FlashcardsView({ banco }) {
+function VistaTarjetasMemoria({ banco }) {
   const [mazo, setMazo] = useState(() => mezclar(banco));
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -2839,7 +2839,7 @@ function FlashcardsView({ banco }) {
   )
 }
 
-function RecallView({ preguntas: preguntasCrudas }) {
+function VistaRecuperacion({ preguntas: preguntasCrudas }) {
   const [mazo, setMazo] = useState(() => mezclar(preguntasCrudas || []));
   const [idx, setIdx] = useState(0);
   const [voltea, setVoltea] = useState(false);
@@ -2975,11 +2975,11 @@ function RecallView({ preguntas: preguntasCrudas }) {
         <div className="rc-card-scene" onClick={voltearTarjeta}>
           <div className={`rc-flip-card${voltea ? ' rc-flipped' : ''}`}>
             <div className="rc-face rc-face-front">
-              <div className="rc-card-text">{actual?.p}</div>
+              <div className="rc-card-texto">{actual?.p}</div>
               <div className="rc-badge-tipo">PREGUNTA</div>
             </div>
             <div className="rc-face rc-face-back">
-              <div className="rc-card-text" style={{ fontSize: '1.1em' }}>{actual?.r}</div>
+              <div className="rc-card-texto" style={{ fontSize: '1.1em' }}>{actual?.r}</div>
               <div className="rc-badge-tipo">RESPUESTA</div>
             </div>
           </div>
@@ -3002,7 +3002,7 @@ function RecallView({ preguntas: preguntasCrudas }) {
   );
 }
 
-function TestView({ preguntas: preguntasCrudas }) {
+function VistaPrueba({ preguntas: preguntasCrudas }) {
   const [preguntas] = useState(() => mezclar(preguntasCrudas || []).map(p => ({
     ...p,
     ops: mezclar((p.ops || []).map(o => ({ texto: o.replace('*', ''), correcta: o.includes('*') })))
@@ -3060,7 +3060,7 @@ function TestView({ preguntas: preguntasCrudas }) {
                 <div className="qz-item-pregunta">{String(p.t || '').replace(/^\d+\.\s*/, '')}</div>
                 {!esCorrecta && elegida !== undefined && <div className="qz-item-elegida">Tu respuesta: {p.ops[elegida].texto}</div>}
                 {correctaIdx > -1 && <div className="qz-item-correcta">Respuesta correcta: {p.ops[correctaIdx].texto}</div>}
-                {p.info && <div className="qz-item-info">{p.info}</div>}
+                {p.informacion && <div className="qz-item-informacion">{p.informacion}</div>}
               </div>
             )
           })}
@@ -3070,7 +3070,7 @@ function TestView({ preguntas: preguntasCrudas }) {
   )
 }
 
-function SintesisView({ datos }) {
+function VistaSintesis({ datos }) {
   const contarPalabras = (str) => str.trim() === '' ? 0 : str.trim().split(/\s+/).length;
   const contarOraciones = (str) => {
     if (!str.trim()) return 0;
@@ -3112,7 +3112,7 @@ function SintesisView({ datos }) {
     if (!capa3.trim()) errores.push('La Capa 3 (Elevator Pitch) está vacía.');
     else if (oracionesC3 > 1) errores.push('El Elevator Pitch debe constar de una sola oración contundente.');
     setPanel({ ok: errores.length === 0, errores, prompt: generarPrompt() });
-    setTimeout(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+    setTimeout(() => panelRef.actual?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
   };
 
   const copiar = () => {
@@ -3151,8 +3151,8 @@ function SintesisView({ datos }) {
           className="sn-textarea"
           rows={5}
           placeholder="Escribe tu resumen comprimido aquí..."
-          value={capa1}
-          onChange={e => setCapa1(e.target.value)}
+          valor={capa1}
+          onChange={e => setCapa1(e.target.valor)}
         />
         {/* barra de progreso */}
         <div className="sn-pct-bar-wrap">
@@ -3186,10 +3186,10 @@ function SintesisView({ datos }) {
               <div className="sn-bullet-num">{i + 1}</div>
               <input
                 className="sn-bullet-input"
-                type="text"
+                type="texto"
                 placeholder={`Punto clave ${i + 1}${i >= 2 ? ' (opcional)' : ''}`}
-                value={b}
-                onChange={e => setBullet(i, e.target.value)}
+                valor={b}
+                onChange={e => setBullet(i, e.target.valor)}
               />
             </div>
           ))}
@@ -3205,8 +3205,8 @@ function SintesisView({ datos }) {
           className="sn-textarea"
           rows={2}
           placeholder="Una sola oración completa que englobe todo el concepto..."
-          value={capa3}
-          onChange={e => setCapa3(e.target.value)}
+          valor={capa3}
+          onChange={e => setCapa3(e.target.valor)}
         />
         <div className="sn-meter-row">
           <span>{oracionesC3} oración(es) detectada(s)</span>
@@ -3247,7 +3247,7 @@ function SintesisView({ datos }) {
           <div className="sn-prompt-box">
             <div className="sn-prompt-title">◎ Prompt personalizado para consultar a la IA</div>
             <p className="sn-prompt-desc">Este texto incluye automáticamente lo que redactaste arriba. Cópialo y pégalo en ChatGPT, Claude o Gemini para obtener una revisión pedagógica de tu estudio.</p>
-            <textarea className="sn-prompt-textarea" readOnly value={panel.prompt} />
+            <textarea className="sn-prompt-textarea" readOnly valor={panel.prompt} />
             <button className={`sn-copy-btn${copied ? ' copied' : ''}`} onClick={copiar}>
               {copied ? '✓ ¡Prompt copiado!' : '▤ Copiar Prompt para la IA'}
             </button>
@@ -3277,7 +3277,7 @@ function SintesisView({ datos }) {
   );
 }
 
-function SQ3RView({ datos }) {
+function VistaSQ3R({ datos }) {
   const FASES = ['survey', 'read', 'recite', 'review']
   const [faseIdx, setFaseIdx] = useState(0)
   const [respuestas, setRespuestas] = useState(() => (datos?.secciones || []).map(() => ''))
@@ -3331,7 +3331,7 @@ function SQ3RView({ datos }) {
       {/* Stepper */}
       <div className="sq3r-stepper">
         {tabLabels.map((t, i) => (
-          <div key={i} className={`sq3r-step${i === faseIdx ? ' active' : ''}${i < faseIdx ? ' completed' : ''}`}>
+          <div key={i} className={`sq3r-paso${i === faseIdx ? ' activo' : ''}${i < faseIdx ? ' completed' : ''}`}>
             <b>{t.label}</b>
             <small>{t.sub}</small>
           </div>
@@ -3344,11 +3344,11 @@ function SQ3RView({ datos }) {
         {/* ── Fase 0: Survey ── */}
         {faseIdx === 0 && (
           <div className="sq3r-card">
-            <div className="sq3r-phase-header">
-              <h3 className="sq3r-phase-h3">1. Survey — Panorama General</h3>
-              <p className="sq3r-phase-desc">Aquí tenés el análisis profundo del documento estructurado por la IA para que entiendas el contexto completo antes de iniciar la lectura.</p>
+            <div className="sq3r-fase-header">
+              <h3 className="sq3r-fase-h3">1. Survey — Panorama General</h3>
+              <p className="sq3r-fase-desc">Aquí tenés el análisis profundo del documento estructurado por la IA para que entiendas el contexto completo antes de iniciar la lectura.</p>
             </div>
-            <div className="sq3r-content-box">
+            <div className="sq3r-contenido-box">
               <span className="sq3r-sec-label">Panorama General y Contexto:</span>
               <p style={{ margin: '8px 0 18px', fontWeight: 500, lineHeight: 1.6, fontSize: 14 }}>{datos.temaGeneral}</p>
               <h4 style={{ borderTop: '1px solid var(--line-soft)', paddingTop: 14, margin: '0 0 8px', font: '600 15px var(--font-serif)', color: 'var(--violet)' }}>Estructura del Contenido:</h4>
@@ -3365,12 +3365,12 @@ function SQ3RView({ datos }) {
         {/* ── Fase 1: Read ── */}
         {faseIdx === 1 && (
           <div className="sq3r-card">
-            <div className="sq3r-phase-header">
-              <h3 className="sq3r-phase-h3">2. Read — Lectura Guiada por Preguntas</h3>
-              <p className="sq3r-phase-desc">Leé el texto de cada sección teniendo en mente la pregunta de examen asociada. Esto guiará tu atención hacia lo verdaderamente importante.</p>
+            <div className="sq3r-fase-header">
+              <h3 className="sq3r-fase-h3">2. Read — Lectura Guiada por Preguntas</h3>
+              <p className="sq3r-fase-desc">Leé el texto de cada sección teniendo en mente la pregunta de examen asociada. Esto guiará tu atención hacia lo verdaderamente importante.</p>
             </div>
             {datos.secciones.map((s, i) => (
-              <div key={i} className="sq3r-content-box">
+              <div key={i} className="sq3r-contenido-box">
                 <span className="sq3r-sec-label">Sección: {s.subtitulo}</span>
                 <h4 style={{ margin: '4px 0 10px', font: '600 15px var(--font-serif)', color: 'var(--violet)' }}>🎯 Pregunta clave: {normQ(s.preguntaGenerada)}</h4>
                 <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.6 }}>{s.texto}</p>
@@ -3385,9 +3385,9 @@ function SQ3RView({ datos }) {
         {/* ── Fase 2: Recite ── */}
         {faseIdx === 2 && (
           <div className="sq3r-card">
-            <div className="sq3r-phase-header">
-              <h3 className="sq3r-phase-h3">3. Recite — Active Recall y Explicación</h3>
-              <p className="sq3r-phase-desc">Ocultamos el texto. Aplicá <b>Active Recall</b>: respondé las preguntas explicándolo como si se lo enseñaras a alguien que no sabe nada del tema.</p>
+            <div className="sq3r-fase-header">
+              <h3 className="sq3r-fase-h3">3. Recite — Active Recall y Explicación</h3>
+              <p className="sq3r-fase-desc">Ocultamos el texto. Aplicá <b>Active Recall</b>: respondé las preguntas explicándolo como si se lo enseñaras a alguien que no sabe nada del tema.</p>
             </div>
             {datos.secciones.map((s, i) => (
               <div key={i} className="sq3r-input-group">
@@ -3395,10 +3395,10 @@ function SQ3RView({ datos }) {
                 <textarea
                   className="sq3r-textarea"
                   placeholder="Explicalo como si se lo enseñaras a alguien que no sabe del tema. No importa si te falta algo…"
-                  value={respuestas[i]}
+                  valor={respuestas[i]}
                   onChange={e => {
                     const next = [...respuestas]
-                    next[i] = e.target.value
+                    next[i] = e.target.valor
                     setRespuestas(next)
                   }}
                 />
@@ -3415,9 +3415,9 @@ function SQ3RView({ datos }) {
         {/* ── Fase 3: Review ── */}
         {faseIdx === 3 && (
           <div className="sq3r-card">
-            <div className="sq3r-phase-header">
-              <h3 className="sq3r-phase-h3">5. Review — Calificación y Feedback de la IA</h3>
-              <p className="sq3r-phase-desc">Copiá el bloque de texto generado abajo y pegáselo a la IA. Ella evaluará tus respuestas de memoria frente al texto original y te dará una calificación detallada.</p>
+            <div className="sq3r-fase-header">
+              <h3 className="sq3r-fase-h3">5. Review — Calificación y Feedback de la IA</h3>
+              <p className="sq3r-fase-desc">Copiá el bloque de texto generado abajo y pegáselo a la IA. Ella evaluará tus respuestas de memoria frente al texto original y te dará una calificación detallada.</p>
             </div>
 
             {datos.secciones.map((s, i) => (
@@ -3427,7 +3427,7 @@ function SQ3RView({ datos }) {
                   <div className="sq3r-resp">
                     <b>Tu explicación:</b><br />{respuestas[i] || <em style={{ color: 'var(--muted)' }}>(sin respuesta)</em>}
                   </div>
-                  <div className="sq3r-text-orig">
+                  <div className="sq3r-texto-orig">
                     <b>Texto de referencia original:</b><br />{s.texto}
                   </div>
                 </div>
@@ -3460,7 +3460,7 @@ function SQ3RView({ datos }) {
   )
 }
 
-function BlurtingView({ datos }) {
+function VistaBlurting({ datos }) {
   const [fase, setFase] = useState('idle'); // idle | running | done
   const [segundos, setSegundos] = useState(() => (datos?.tiempoMinutos || 5) * 60);
   const [texto, setTexto] = useState('');
@@ -3473,13 +3473,13 @@ function BlurtingView({ datos }) {
 
   useEffect(() => {
     if (fase !== 'running') return;
-    timerRef.current = setInterval(() => {
+    timerRef.actual = setInterval(() => {
       setSegundos(s => {
-        if (s <= 1) { clearInterval(timerRef.current); corregir(); return 0; }
+        if (s <= 1) { clearInterval(timerRef.actual); corregir(); return 0; }
         return s - 1;
       });
     }, 1000);
-    return () => clearInterval(timerRef.current);
+    return () => clearInterval(timerRef.actual);
   }, [fase]);
 
   const iniciar = () => {
@@ -3488,11 +3488,11 @@ function BlurtingView({ datos }) {
     setTexto('');
     setResultado(null);
     setSegundos((datos?.tiempoMinutos || 5) * 60);
-    setTimeout(() => textareaRef.current?.focus(), 50);
+    setTimeout(() => textareaRef.actual?.focus(), 50);
   };
 
   const corregir = () => {
-    clearInterval(timerRef.current);
+    clearInterval(timerRef.actual);
     if (pausaTimer) clearTimeout(pausaTimer);
     setFase('done');
     setStatusLabel('Vaciado finalizado');
@@ -3510,11 +3510,11 @@ function BlurtingView({ datos }) {
     });
 
     setResultado({ encontrados, faltantes, porcentaje, textoResaltado, textoPlano: texto });
-    setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    setTimeout(() => resultRef.actual?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
   };
 
   const reiniciar = () => {
-    clearInterval(timerRef.current);
+    clearInterval(timerRef.actual);
     setFase('idle');
     setSegundos((datos?.tiempoMinutos || 5) * 60);
     setTexto('');
@@ -3550,7 +3550,7 @@ ${resultado.faltantes.length > 0 ? resultado.faltantes.map(c => `  * ${c}`).join
   };
 
   const alEscribir = (e) => {
-    setTexto(e.target.value);
+    setTexto(e.target.valor);
     setStatusLabel('Escribiendo...');
     if (pausaTimer) clearTimeout(pausaTimer);
     setPausaTimer(setTimeout(() => setStatusLabel('Tiempo de reflexión'), 1500));
@@ -3589,7 +3589,7 @@ ${resultado.faltantes.length > 0 ? resultado.faltantes.map(c => `  * ${c}`).join
         <div className="bl-timer-progress" style={{ width: `${progreso}%` }} />
         <div className="bl-timer-inner">
           <div className="bl-timer-display-row">
-            <div className={`bl-status-dot${fase === 'running' ? ' active' : ''}`} />
+            <div className={`bl-status-dot${fase === 'running' ? ' activo' : ''}`} />
             <span className="bl-time">{min}:{sec}</span>
           </div>
           <div className="bl-controls">
@@ -3607,7 +3607,7 @@ ${resultado.faltantes.length > 0 ? resultado.faltantes.map(c => `  * ${c}`).join
       </div>
 
       {/* Área de escritura */}
-      <div className={`bl-editor${fase === 'running' ? ' active' : ''}`}>
+      <div className={`bl-editor${fase === 'running' ? ' activo' : ''}`}>
         <div className="bl-editor-meta">
           <span>{statusLabel}</span>
           <span>{texto.length} caracteres</span>
@@ -3615,7 +3615,7 @@ ${resultado.faltantes.length > 0 ? resultado.faltantes.map(c => `  * ${c}`).join
         <textarea
           ref={textareaRef}
           className="bl-textarea"
-          value={texto}
+          valor={texto}
           onChange={alEscribir}
           disabled={fase !== 'running'}
           placeholder={fase === 'idle' ? "Hacé clic en 'Iniciar vaciado' para comenzar. Escribí todo lo que recuerdes del tema..." : fase === 'done' ? 'Sesión finalizada.' : 'Escribí todo lo que recuerdes del tema sin mirar tus apuntes...'}
@@ -3651,7 +3651,7 @@ ${resultado.faltantes.length > 0 ? resultado.faltantes.map(c => `  * ${c}`).join
 
           <div className="bl-section">
             <p className="bl-section-label">Tu texto escrito</p>
-            <div className="bl-highlighted-text">
+            <div className="bl-highlighted-texto">
               {renderTextoResaltado(resultado.textoResaltado)}
             </div>
           </div>
@@ -3661,7 +3661,7 @@ ${resultado.faltantes.length > 0 ? resultado.faltantes.map(c => `  * ${c}`).join
   );
 }
 
-function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previewError, previewVersion, loading, streamText, materials, activeMaterial, onSelectMaterial, onAddMaterial, onRemoveMaterial, onPreviewMaterial, onClose, onGenerate, callAI, aiProvider, aiModel, aiBaseUrl }) {
+function SalaEstudio({ method, claveApi, providerLabel, resultadoIA, datosVistaPrevia, errorVistaPrevia, versionVistaPrevia, cargando, textoFlujo, materiales, materialActivo, alSeleccionarMaterial, alAgregarMaterial, alQuitarMaterial, alVistaPreviaMaterial, alCerrar, alGenerar, llamarIA, proveedorIA, modeloIA, urlBaseIA }) {
   const [answer, setAnswer] = useState(false), [notes, setNotes] = useState('');
   const [removingId, setRemovingId] = useState(null);
   const [chatMsgs, setChatMsgs] = useState([]);
@@ -3669,42 +3669,42 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
   const [chatLoading, setChatLoading] = useState(false);
   const chatEndRef = useRef(null);
 
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [chatMsgs]);
+  useEffect(() => { chatEndRef.actual?.scrollIntoView({ behavior: 'smooth' }) }, [chatMsgs]);
 
   const sendChat = async () => {
-    const text = chatInput.trim();
-    if (!text || chatLoading || !apiKey && aiProvider !== 'openai_compatible') return;
-    const userMsg = { role: 'user', content: text };
+    const texto = chatInput.trim();
+    if (!texto || chatLoading || !claveApi && proveedorIA !== 'openai_compatible') return;
+    const userMsg = { role: 'user', contenido: texto };
     setChatMsgs(prev => [...prev, userMsg]);
     setChatInput('');
     setChatLoading(true);
     try {
-      const materialCtx = activeMaterial ? `\n\nEl estudiante está trabajando con el material: "${activeMaterial.name}".` : '';
+      const materialCtx = materialActivo ? `\n\nEl estudiante está trabajando con el material: "${materialActivo.name}".` : '';
       // Contexto del resultado generado por la IA (mapa mental, Cornell, etc.) para que
       // el tutor pueda responder preguntas puntuales sobre lo que se generó (ej. "¿qué
       // significa el nodo X del mapa?", "explicame la hoja 2 del Cornell").
       let resultCtx = '';
-      if (previewData) {
+      if (datosVistaPrevia) {
         try {
-          const serialized = JSON.stringify(previewData);
+          const serialized = JSON.stringify(datosVistaPrevia);
           const trimmed = serialized.length > 6000 ? serialized.slice(0, 6000) + '…(truncado)' : serialized;
           resultCtx = `\n\nA continuación tenés, en formato JSON, el contenido exacto que se generó con el método "${method[1]}" a partir de ese material. Usalo como referencia para responder preguntas sobre nodos, hojas, tarjetas o cualquier parte específica de este resultado:\n${trimmed}`;
         } catch {}
-      } else if (aiResult) {
-        const trimmed = aiResult.length > 6000 ? aiResult.slice(0, 6000) + '…(truncado)' : aiResult;
+      } else if (resultadoIA) {
+        const trimmed = resultadoIA.length > 6000 ? resultadoIA.slice(0, 6000) + '…(truncado)' : resultadoIA;
         resultCtx = `\n\nA continuación tenés el contenido generado con el método "${method[1]}" a partir de ese material. Usalo como referencia:\n${trimmed}`;
       }
-      const historial = chatMsgs.map(m => `${m.role === 'user' ? 'Estudiante' : 'Tutor'}: ${m.content}`).join('\n');
-      const promptCtx = historial ? `Historial:\n${historial}\n\nEstudiante: ${text}` : text;
+      const historial = chatMsgs.map(m => `${m.role === 'user' ? 'Estudiante' : 'Tutor'}: ${m.contenido}`).join('\n');
+      const promptCtx = historial ? `Historial:\n${historial}\n\nEstudiante: ${texto}` : texto;
       const systemPrompt = `Sos un tutor académico experto y paciente. Tu objetivo es ayudar al estudiante a entender los temas de su material de estudio.${materialCtx}${resultCtx} Respondé de forma clara, directa y en el idioma del estudiante. Si el estudiante pregunta por una parte específica del resultado generado (un nodo del mapa, una hoja del Cornell, una tarjeta, etc.), usá el JSON de referencia para responder con precisión. Si el estudiante dice que no entendió algo, explicalo de otra forma, con ejemplos o analogías. Sé conciso pero completo.`;
       const fullPrompt = `${systemPrompt}\n\n${promptCtx}`;
-      const resp = await callAI({
-        provider: aiProvider, model: aiModel, key: apiKey,
-        promptText: fullPrompt, material: null, baseUrl: aiBaseUrl
+      const resp = await llamarIA({
+        provider: proveedorIA, model: modeloIA, key: claveApi,
+        promptText: fullPrompt, material: null, baseUrl: urlBaseIA
       });
-      setChatMsgs(prev => [...prev, { role: 'assistant', content: resp }]);
+      setChatMsgs(prev => [...prev, { role: 'assistant', contenido: resp }]);
     } catch (e) {
-      setChatMsgs(prev => [...prev, { role: 'assistant', content: `No pude responder: ${e.message}` }]);
+      setChatMsgs(prev => [...prev, { role: 'assistant', contenido: `No pude responder: ${e.mensaje}` }]);
     } finally {
       setChatLoading(false);
     }
@@ -3717,10 +3717,10 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
   const [pseudoFullscreen, setPseudoFullscreen] = useState(false);
 
   useEffect(() => {
-    if (streamRef.current) {
-      streamRef.current.scrollTop = streamRef.current.scrollHeight;
+    if (streamRef.actual) {
+      streamRef.actual.scrollTop = streamRef.actual.scrollHeight;
     }
-  }, [streamText]);
+  }, [textoFlujo]);
   
   const soportaFullscreenNativo = useMemo(() => {
     const el = document.documentElement;
@@ -3745,7 +3745,7 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
   }, [pseudoFullscreen]);
   
   const toggleFullscreen = () => {
-    const el = aiResultRef.current;
+    const el = aiResultRef.actual;
     if (!el) return;
     if (!soportaFullscreenNativo) {
       setPseudoFullscreen(p => !p);
@@ -3760,55 +3760,55 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
   
   const fullscreenActivo = isFullscreen || pseudoFullscreen;
   
-  const handleRemove = (m) => {
+  const manejarQuitar = (m) => {
     if (removingId) return;
     setRemovingId(m.id);
-    setTimeout(() => { onRemoveMaterial(m); setRemovingId(null) }, 280);
+    setTimeout(() => { alQuitarMaterial(m); setRemovingId(null) }, 280);
   }
   
   const downloadResult = () => {
-    if (!aiResult) return;
-    const blob = new Blob([aiResult], { type: 'text/plain;charset=utf-8' });
+    if (!resultadoIA) return;
+    const blob = new Blob([resultadoIA], { type: 'texto/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${method[1]}${activeMaterial ? '-' + activeMaterial.name.replace(/\.[^/.]+$/, '') : ''}.${strict ? 'js' : 'txt'}`;
+    a.download = `${method[1]}${materialActivo ? '-' + materialActivo.name.replace(/\.[^/.]+$/, '') : ''}.${strict ? 'js' : 'txt'}`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
   
   return (
-    <div className="study-overlay" onClick={onClose}>
-      <section className="study-room" onClick={(e) => e.stopPropagation()}>
+    <div className="study-overlay" onClick={alCerrar}>
+      <section className="study-sala" onClick={(e) => e.stopPropagation()}>
         <header className="study-head">
-          <button className="back" onClick={onClose}>← Volver al panel</button>
+          <button className="back" onClick={alCerrar}>← Volver al panel</button>
           <div> <span>{method[3]}</span> <b>{method[1]}</b> </div>
           <button
             className="ai-action"
-            onClick={onGenerate}
-            disabled={loading || (apiKey && !activeMaterial)}
+            onClick={alGenerar}
+            disabled={cargando || (claveApi && !materialActivo)}
           >
-            ✦ {loading ? 'Analizando…' : !apiKey ? 'Conectar IA' : !activeMaterial ? 'Selecciona un archivo' : aiResult ? `Regenerar con ${providerLabel}` : `Analizar con ${providerLabel}`}
+            ✦ {cargando ? 'Analizando…' : !claveApi ? 'Conectar IA' : !materialActivo ? 'Selecciona un archivo' : resultadoIA ? `Regenerar con ${providerLabel}` : `Analizar con ${providerLabel}`}
           </button>
         </header>
         <div className="study-body">
           <aside className="study-side">
             <p className="eyebrow" style={{ margin: 0 }}>MATERIAL ACTIVO</p>
-            {materials.length === 0 ? (
+            {materiales.length === 0 ? (
               <div className="empty-source">▤ <b>Aún no elegiste un material</b> <span>Agrega un PDF o un apunte con el botón de abajo.</span></div>
             ) : (
               <div className="material-selector" style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '15px' }}>
-                {materials.map(m => (
+                {materiales.map(m => (
                   <div
                     key={m.id}
-                    onClick={() => onSelectMaterial(m)}
-                    onDoubleClick={() => onPreviewMaterial(m)}
+                    onClick={() => alSeleccionarMaterial(m)}
+                    onDoubleClick={() => alVistaPreviaMaterial(m)}
                     title="Doble clic para ver una vista previa"
                     style={{
                       display: 'flex', alignItems: 'center', gap: '8px',
                       padding: '10px', textAlign: 'left', borderRadius: '8px', border: '1px solid var(--line)',
-                      background: activeMaterial?.id === m.id ? 'var(--bg-soft)' : 'var(--bg-surface)', cursor: 'pointer',
-                      color: 'var(--ink)', fontSize: '11px', fontWeight: activeMaterial?.id === m.id ? '600' : '400',
+                      background: materialActivo?.id === m.id ? 'var(--bg-soft)' : 'var(--bg-surface)', cursor: 'pointer',
+                      color: 'var(--ink)', fontSize: '11px', fontWeight: materialActivo?.id === m.id ? '600' : '400',
                       opacity: removingId === m.id ? 0 : 1,
                       transform: removingId === m.id ? 'scale(0.82) translateX(18px)' : 'scale(1) translateX(0)',
                       maxHeight: removingId === m.id ? '0px' : '60px',
@@ -3821,7 +3821,7 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
                       <i>{m.type === 'PDF' ? '📄' : '📝'}</i> {m.name}
                     </span>
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleRemove(m) }}
+                      onClick={(e) => { e.stopPropagation(); manejarQuitar(m) }}
                       title="Eliminar material"
                       disabled={removingId === m.id}
                       className="study-material-remove"
@@ -3843,13 +3843,13 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
                 ))}
               </div>
             )}
-            <label className="upload-link study-add-btn" style={{ fontSize: '10px', marginTop: '16px' }}>+ Agregar <input type="file" accept=".pdf,.txt,.md" multiple onChange={onAddMaterial} /></label>
+            <label className="upload-link study-add-btn" style={{ fontSize: '10px', marginTop: '16px' }}>+ Agregar <input type="file" accept=".pdf,.txt,.md" multiple onChange={alAgregarMaterial} /></label>
             <style>{'@keyframes trash-shake{0%{transform:rotate(0)}25%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}100%{transform:rotate(0)}}'}</style>
           </aside>
           <article className="canvas">
             <p className="eyebrow">{method[1].toUpperCase()}</p>
             <h2>{method[0] === 'mind' ? 'Organizá las ideas de tu tema.' : method[0] === 'recall' ? 'Poné a prueba la memoria antes de mirar.' : method[0] === 'multiple' ? 'Rendí un examen y medí tu dominio del tema.' : method[0] === 'blurting' ? 'Vaciá tu memoria. Descubrí qué falta.' : method[0] === 'sintesis' ? 'Reducí el texto capa por capa hasta la esencia.' : method[0] === 'sq3r' ? 'Survey, Read, Recite y Review para dominar el tema.' : method[0] === 'subrayado' ? 'Subrayá y jerarquizá las ideas por categorías.' : 'Convertí lo que estudiás en conocimiento propio.'}</h2>
-            {loading && (
+            {cargando && (
               <section className="ai-result" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <span style={{
@@ -3877,7 +3877,7 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
                   <div style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--violet)', fontWeight: 600, marginBottom: '6px' }}>
                     ✦ Proceso de pensamiento y generación en vivo:
                   </div>
-                  {streamText ? streamText : (
+                  {textoFlujo ? textoFlujo : (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontStyle: 'italic' }}>
                       <span style={{
                         display: 'inline-block', width: '9px', height: '9px', borderRadius: '50%',
@@ -3890,7 +3890,7 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
                 <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
               </section>
             )}
-            {!loading && aiResult && (
+            {!cargando && resultadoIA && (
               <section className={`ai-result${pseudoFullscreen ? ' is-pseudo-fullscreen' : ''}`} ref={aiResultRef}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <b style={{ color: 'var(--muted)', fontSize: 11, fontWeight: 600 }}>✦ Propuesta de {providerLabel}</b>
@@ -3912,57 +3912,57 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
                     >⬇ Descargar código</button>
                   </div>
                 </div>
-                {strict && previewData && (method[0] === 'mind' || method[0] === 'cornell' || method[0] === 'spaced') && (
+                {strict && datosVistaPrevia && (method[0] === 'mind' || method[0] === 'cornell' || method[0] === 'spaced') && (
                   <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
                     {method[0] === 'mind' && (
-                      <button onClick={() => exportarMapaAPDF(previewData)} style={{ color: 'var(--violet)', background: 'var(--bg-soft)', border: '1px solid var(--line-accent)', borderRadius: '7px', padding: '5px 9px', fontSize: '10px', fontWeight: 600, cursor: 'pointer' }}>⬇ Exportar PDF</button>
+                      <button onClick={() => exportarMapaAPDF(datosVistaPrevia)} style={{ color: 'var(--violet)', background: 'var(--bg-soft)', border: '1px solid var(--line-accent)', borderRadius: '7px', padding: '5px 9px', fontSize: '10px', fontWeight: 600, cursor: 'pointer' }}>⬇ Exportar PDF</button>
                     )}
                     {method[0] === 'cornell' && (
-                      <button onClick={() => exportarCornellAPDF(previewData)} style={{ color: 'var(--violet)', background: 'var(--bg-soft)', border: '1px solid var(--line-accent)', borderRadius: '7px', padding: '5px 9px', fontSize: '10px', fontWeight: 600, cursor: 'pointer' }}>⬇ Exportar PDF imprimible</button>
+                      <button onClick={() => exportarCornellAPDF(datosVistaPrevia)} style={{ color: 'var(--violet)', background: 'var(--bg-soft)', border: '1px solid var(--line-accent)', borderRadius: '7px', padding: '5px 9px', fontSize: '10px', fontWeight: 600, cursor: 'pointer' }}>⬇ Exportar PDF imprimible</button>
                     )}
                     {method[0] === 'spaced' && (
-                      <button onClick={() => exportarFlashcardsAnki(previewData, activeMaterial?.name)} style={{ color: 'var(--violet)', background: 'var(--bg-soft)', border: '1px solid var(--line-accent)', borderRadius: '7px', padding: '5px 9px', fontSize: '10px', fontWeight: 600, cursor: 'pointer' }}>⬇ Exportar a Anki (.txt)</button>
+                      <button onClick={() => exportarFlashcardsAnki(datosVistaPrevia, materialActivo?.name)} style={{ color: 'var(--violet)', background: 'var(--bg-soft)', border: '1px solid var(--line-accent)', borderRadius: '7px', padding: '5px 9px', fontSize: '10px', fontWeight: 600, cursor: 'pointer' }}>⬇ Exportar a Anki (.txt)</button>
                     )}
                   </div>
                 )}
-                {strict && previewData && (
+                {strict && datosVistaPrevia && (
                   <div style={{ marginTop: 14 }}>
-                    <ErrorBoundary
-                      key={previewVersion}
-                      fallback={(msg) => (
+                    <LimiteError
+                      key={versionVistaPrevia}
+                      alternativa={(msg) => (
                         <div style={{ padding: '22px 16px', textAlign: 'center', background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', borderRadius: 12 }}>
                           <b style={{ color: 'var(--danger)', fontSize: 13 }}>No pudimos mostrar esta vista.</b>
                           <p style={{ fontSize: 11.5, color: 'var(--muted)', margin: '6px 0 0' }}>El contenido que devolvió la IA no tenía el formato esperado. Descargá el código de arriba y revisalo, o generá el contenido de nuevo.</p>
                         </div>
                       )}
                     >
-                      {method[0] === 'mind' && <MapaView datos={previewData} />}
-                      {method[0] === 'cornell' && <CornellView datos={previewData} />}
-                      {method[0] === 'spaced' && <SpacedRepetitionView banco={previewData} />}
-                      {method[0] === 'recall' && <RecallView preguntas={previewData} />}
-                      {method[0] === 'multiple' && <TestView preguntas={previewData} />}
-                      {method[0] === 'feynman' && <FeynmanView datos={previewData} />}
-                      {method[0] === 'blurting' && <BlurtingView datos={previewData} />}
-                      {method[0] === 'sintesis' && <SintesisView datos={previewData} />}
-                      {method[0] === 'sq3r' && <SQ3RView datos={previewData} />}
-                      {method[0] === 'subrayado' && <SubrayadoView datos={previewData} />}
-                      {method[0] === 'timeline' && <TimelineView datos={previewData} />}
-                      {method[0] === 'tabla' && <TablaView datos={previewData} />}
-                    </ErrorBoundary>
+                      {method[0] === 'mind' && <VistaMapa datos={datosVistaPrevia} />}
+                      {method[0] === 'cornell' && <VistaCornell datos={datosVistaPrevia} />}
+                      {method[0] === 'spaced' && <VistaRepeticionEspaciada banco={datosVistaPrevia} />}
+                      {method[0] === 'recall' && <VistaRecuperacion preguntas={datosVistaPrevia} />}
+                      {method[0] === 'multiple' && <VistaPrueba preguntas={datosVistaPrevia} />}
+                      {method[0] === 'feynman' && <VistaFeynman datos={datosVistaPrevia} />}
+                      {method[0] === 'blurting' && <VistaBlurting datos={datosVistaPrevia} />}
+                      {method[0] === 'sintesis' && <VistaSintesis datos={datosVistaPrevia} />}
+                      {method[0] === 'sq3r' && <VistaSQ3R datos={datosVistaPrevia} />}
+                      {method[0] === 'subrayado' && <VistaSubrayado datos={datosVistaPrevia} />}
+                      {method[0] === 'timeline' && <VistaLineaTiempo datos={datosVistaPrevia} />}
+                      {method[0] === 'tabla' && <VistaTabla datos={datosVistaPrevia} />}
+                    </LimiteError>
                   </div>
                 )}
-                {strict && !previewData && (
+                {strict && !datosVistaPrevia && (
                   <p style={{ margin: '6px 0 0', fontSize: '10px', color: 'var(--danger)', fontWeight: 600 }}>
-                    No pudimos interpretar el resultado automáticamente{previewError ? `: ${previewError}` : ''}. Descargá el código de abajo y revisalo, o regenerá con {providerLabel}.
+                    No pudimos interpretar el resultado automáticamente{errorVistaPrevia ? `: ${errorVistaPrevia}` : ''}. Descargá el código de abajo y revisalo, o regenerá con {providerLabel}.
                   </p>
                 )}
                 {!strict && (
-                  <div style={{ whiteSpace: 'pre-wrap', marginTop: '10px', lineHeight: '1.5' }}>{aiResult}</div>
+                  <div style={{ whiteSpace: 'pre-wrap', marginTop: '10px', lineHeight: '1.5' }}>{resultadoIA}</div>
                 )}
               </section>
             )}
             {/* ── Canvas: Mapa Mental ── */}
-            {method[0] === 'mind' && !previewData && (
+            {method[0] === 'mind' && !datosVistaPrevia && (
               <div className="mind-map">
                 <div className="mind-node root">Idea Central</div>
                 <div className="mind-node n1">Concepto 1</div>
@@ -3972,7 +3972,7 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
               </div>
             )}
             {/* ── Canvas: Cornell ── */}
-            {method[0] === 'cornell' && !previewData && (
+            {method[0] === 'cornell' && !datosVistaPrevia && (
               <div className="canvas-placeholder cornell-placeholder">
                 <div className="cp-header">
                   <div className="cp-header-meta">
@@ -4003,7 +4003,7 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
               </div>
             )}
             {/* ── Canvas: Feynman ── */}
-            {method[0] === 'feynman' && !previewData && (
+            {method[0] === 'feynman' && !datosVistaPrevia && (
               <div className="canvas-placeholder feynman-placeholder">
                 <div className="cp-feynman-steps">
                   {[
@@ -4012,9 +4012,9 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
                     { num: '3', label: 'Puntos críticos', icon: '◈' },
                     { num: '4', label: 'Síntesis y analogía', icon: '◉' },
                   ].map((s, i) => (
-                    <div key={i} className="cp-fy-step">
+                    <div key={i} className="cp-fy-paso">
                       <div className="cp-fy-icon">{s.icon}</div>
-                      <div className="cp-fy-info">
+                      <div className="cp-fy-informacion">
                         <span className="cp-fy-num">PASO {s.num}</span>
                         <span className="cp-fy-label">{s.label}</span>
                       </div>
@@ -4029,11 +4029,11 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
               </div>
             )}
             {/* ── Canvas: Active Recall ── */}
-            {method[0] === 'recall' && !previewData && (
+            {method[0] === 'recall' && !datosVistaPrevia && (
               <div className="canvas-placeholder recall-placeholder">
                 <div className="cp-recall-card cp-recall-question">
                   <span className="cp-badge">↶ ACTIVE RECALL · PREGUNTA 1</span>
-                  <div className="cp-recall-text">¿Qué recuerdas sobre este concepto?</div>
+                  <div className="cp-recall-texto">¿Qué recuerdas sobre este concepto?</div>
                   <div className="cp-recall-btn-mock">Intenté recordarla → ver respuesta</div>
                 </div>
                 <div className="cp-recall-card cp-recall-answer">
@@ -4049,7 +4049,7 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
               </div>
             )}
             {/* ── Canvas: Multiple Choice ── */}
-            {method[0] === 'multiple' && !previewData && (
+            {method[0] === 'multiple' && !datosVistaPrevia && (
               <div className="canvas-placeholder multiple-placeholder">
                 <div className="cp-qz-card">
                   <div className="cp-qz-num">1.</div>
@@ -4072,7 +4072,7 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
             )}
             {/* ── Canvas: Blurting ── */}
             {/* ── Canvas: Síntesis por Embudo ── */}
-            {method[0] === 'sintesis' && !previewData && (
+            {method[0] === 'sintesis' && !datosVistaPrevia && (
               <div className="canvas-placeholder">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 560 }}>
                   {[
@@ -4096,7 +4096,7 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
                 <p className="cp-hint">La IA reducirá tu material en 3 capas progresivas: resumen al 50%, puntos clave y un Elevator Pitch de una sola oración. Luego podés comparar con la síntesis ideal.</p>
               </div>
             )}
-            {method[0] === 'blurting' && !previewData && (
+            {method[0] === 'blurting' && !datosVistaPrevia && (
               <div className="canvas-placeholder blurting-placeholder">
                 <div className="cp-bl-header">
                   <span className="cp-badge">✐ BLURTING · VACIADO DE MEMORIA</span>
@@ -4126,7 +4126,7 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
               </div>
             )}
             {/* ── Canvas: Spaced Repetition ── */}
-            {method[0] === 'spaced' && !previewData && (
+            {method[0] === 'spaced' && !datosVistaPrevia && (
               <div>
                 <div className="fc-dash" style={{ maxWidth: 480 }}>
                   <div>Nuevas: <strong style={{ color: 'var(--violet)', fontFamily: 'DM Mono,monospace', fontSize: 14, marginLeft: 5 }}>—</strong></div>
@@ -4135,13 +4135,13 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
                 </div>
                 <div className="leitner" style={{ marginTop: 22 }}>
                   {[
-                    { label: 'Caja 1 · Aprendizaje', bg: 'var(--danger-bg)', count: '?' },
-                    { label: 'Caja 2 · En Progreso',  bg: 'var(--bg-soft)',   count: '?' },
-                    { label: 'Caja 3 · Retención',    bg: '#fff0df',          count: '?' },
-                    { label: 'Caja 4+ · Dominio',     bg: 'var(--mint)',      count: '?' },
+                    { label: 'Caja 1 · Aprendizaje', bg: 'var(--danger-bg)', contador: '?' },
+                    { label: 'Caja 2 · En Progreso',  bg: 'var(--bg-soft)',   contador: '?' },
+                    { label: 'Caja 3 · Retención',    bg: '#fff0df',          contador: '?' },
+                    { label: 'Caja 4+ · Dominio',     bg: 'var(--mint)',      contador: '?' },
                   ].map((box, i) => (
                     <div key={i} style={{ background: box.bg }}>
-                      <b style={{ font: '600 28px Playfair Display', display: 'block', color: 'var(--violet)' }}>{box.count}</b>
+                      <b style={{ font: '600 28px Playfair Display', display: 'block', color: 'var(--violet)' }}>{box.contador}</b>
                       <span style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', fontFamily: 'DM Mono,monospace', letterSpacing: 1 }}>{box.label}</span>
                     </div>
                   ))}
@@ -4150,12 +4150,12 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
               </div>
             )}
             {/* ── Canvas: SQ3R ── */}
-            {method[0] === 'sq3r' && !previewData && (
+            {method[0] === 'sq3r' && !datosVistaPrevia && (
               <div className="canvas-placeholder">
                 <div className="sq3r-placeholder-wrap">
                   <div className="sq3r-pl-stepper">
                     {[['Survey','Panorama'],['Read','Lectura'],['Recite','Recall'],['Review','Calificación']].map(([label, sub], i) => (
-                      <div key={i} className={`sq3r-pl-step${i === 0 ? ' sq3r-pl-active' : ''}`}>
+                      <div key={i} className={`sq3r-pl-paso${i === 0 ? ' sq3r-pl-activo' : ''}`}>
                         <b>{label}</b><small>{sub}</small>
                       </div>
                     ))}
@@ -4186,7 +4186,7 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
               </div>
             )}
             {/* ── Canvas: Subrayado Jerárquico ── */}
-            {method[0] === 'subrayado' && !previewData && (
+            {method[0] === 'subrayado' && !datosVistaPrevia && (
               <div className="canvas-placeholder">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 560 }}>
                   <span className="cp-badge">▣ SUBRAYADO JERÁRQUICO</span>
@@ -4210,7 +4210,7 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
               </div>
             )}
             {/* ── Canvas: Línea de Tiempo ── */}
-            {method[0] === 'timeline' && !previewData && (
+            {method[0] === 'timeline' && !datosVistaPrevia && (
               <div className="canvas-placeholder">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 0, maxWidth: 520 }}>
                   <span className="cp-badge" style={{ marginBottom: 12 }}>⟶ LÍNEA DE TIEMPO CONECTADA</span>
@@ -4236,7 +4236,7 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
               </div>
             )}
             {/* ── Canvas: Tabla Comparativa ── */}
-            {method[0] === 'tabla' && !previewData && (
+            {method[0] === 'tabla' && !datosVistaPrevia && (
               <div className="canvas-placeholder">
                 <span className="cp-badge" style={{ marginBottom: 12, display: 'inline-block' }}>⊞ TABLA COMPARATIVA</span>
                 <div style={{ overflowX: 'auto', maxWidth: 560 }}>
@@ -4263,7 +4263,7 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
                 <p className="cp-hint">La IA identificará los conceptos comparables en tu material y los organizará en una tabla con criterios relevantes.</p>
               </div>
             )}
-            {writing && <div className="writing-space"> <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Empieza a explicar con tus propias palabras lo que leíste del material seleccionado…" /> <button className="primary" onClick={onGenerate}>Analizar texto y notas con {providerLabel} →</button> </div>}
+            {writing && <div className="writing-space"> <textarea valor={notes} onChange={e => setNotes(e.target.valor)} placeholder="Empieza a explicar con tus propias palabras lo que leíste del material seleccionado…" /> <button className="primary" onClick={alGenerar}>Analizar texto y notas con {providerLabel} →</button> </div>}
 
             {/* ── Chat de dudas ── */}
             <div className="tutor-chat">
@@ -4278,13 +4278,13 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
                 {chatMsgs.length === 0 && !chatLoading && (
                   <div className="tutor-chat-empty">
                     <span className="tutor-chat-empty-icon">💬</span>
-                    <p>Escribí tu duda sobre {activeMaterial ? `"${activeMaterial.name}"` : 'el material'} y el tutor te responde acá.</p>
+                    <p>Escribí tu duda sobre {materialActivo ? `"${materialActivo.name}"` : 'el material'} y el tutor te responde acá.</p>
                   </div>
                 )}
                 {chatMsgs.map((m, i) => (
                   <div key={i} className={`tutor-msg tutor-msg-${m.role}`}>
                     <span className="tutor-msg-label">{m.role === 'user' ? 'Vos' : providerLabel}</span>
-                    <div className="tutor-msg-bubble">{m.content}</div>
+                    <div className="tutor-msg-bubble">{m.contenido}</div>
                   </div>
                 ))}
                 {chatLoading && (
@@ -4300,10 +4300,10 @@ function StudyRoom({ method, apiKey, providerLabel, aiResult, previewData, previ
               <div className="tutor-chat-input-row">
                 <textarea
                   className="tutor-chat-textarea"
-                  value={chatInput}
-                  onChange={e => setChatInput(e.target.value)}
+                  valor={chatInput}
+                  onChange={e => setChatInput(e.target.valor)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }}
-                  placeholder={activeMaterial ? `Preguntá algo sobre "${activeMaterial.name}"… (Enter para enviar)` : 'Preguntá cualquier duda sobre tu material…'}
+                  placeholder={materialActivo ? `Preguntá algo sobre "${materialActivo.name}"… (Enter para enviar)` : 'Preguntá cualquier duda sobre tu material…'}
                   rows={2}
                   disabled={chatLoading}
                 />
@@ -4332,9 +4332,9 @@ const SB_CATEGORIAS = [
   { id: 'secundario', nombre: '🟡 Detalles / Ideas Secundarias',        emoji: '🟡' },
 ]
 
-function SubrayadoView({ datos }) {
+function VistaSubrayado({ datos }) {
   const [colorActivo, setColorActivo] = useState('concepto')
-  const [marks, setMarks] = useState([]) // { id, color, text }
+  const [marks, setMarks] = useState([]) // { id, color, texto }
   const [showIdeal, setShowIdeal] = useState(false)
   const [promptText, setPromptText] = useState('')
   const [promptCopied, setPromptCopied] = useState(false)
@@ -4345,22 +4345,22 @@ function SubrayadoView({ datos }) {
 
   const contarPalabras = (str) => str.trim() === '' ? 0 : str.trim().split(/\s+/).length
 
-  // Re-render the text with marks applied
+  // Re-render the texto with marks applied
   useEffect(() => {
-    if (!viewerRef.current) return
-    // Store current text if empty
-    if (viewerRef.current.innerText === '' || marks.length === 0) {
-      viewerRef.current.innerText = datos.textoOrigen
+    if (!viewerRef.actual) return
+    // Store actual texto if empty
+    if (viewerRef.actual.innerText === '' || marks.length === 0) {
+      viewerRef.actual.innerText = datos.textoOrigen
     }
   }, [datos])
 
   const applyHighlight = (color) => {
     const selection = window.getSelection()
-    let range = (selection && !selection.isCollapsed) ? selection.getRangeAt(0) : savedRangeRef.current
+    let range = (selection && !selection.isCollapsed) ? selection.getRangeAt(0) : savedRangeRef.actual
     if (!range) return
-    const text = range.toString().trim()
-    if (!text) return
-    const container = viewerRef.current
+    const texto = range.toString().trim()
+    if (!texto) return
+    const container = viewerRef.actual
     if (!container || !container.contains(range.commonAncestorContainer)) return
 
     const mark = document.createElement('mark')
@@ -4384,9 +4384,9 @@ function SubrayadoView({ datos }) {
       range.insertNode(mark)
     }
 
-    setMarks(prev => [...prev, { id: markId, color, text }])
+    setMarks(prev => [...prev, { id: markId, color, texto }])
     window.getSelection()?.removeAllRanges()
-    savedRangeRef.current = null
+    savedRangeRef.actual = null
     setPopupVisible(false)
   }
 
@@ -4394,9 +4394,9 @@ function SubrayadoView({ datos }) {
     const selection = window.getSelection()
     if (!selection || selection.isCollapsed) { setPopupVisible(false); return }
     const range = selection.getRangeAt(0)
-    const container = viewerRef.current
+    const container = viewerRef.actual
     if (!container || !container.contains(range.commonAncestorContainer)) { setPopupVisible(false); return }
-    savedRangeRef.current = range.cloneRange()
+    savedRangeRef.actual = range.cloneRange()
     const rect = range.getBoundingClientRect()
     const containerRect = container.getBoundingClientRect()
     setPopupPos({ top: rect.top - containerRect.top - 8, left: Math.max(0, rect.left - containerRect.left) })
@@ -4405,15 +4405,15 @@ function SubrayadoView({ datos }) {
 
   const marksParaCategoria = (catId) => marks.filter(m => m.color === catId)
 
-  const totalPalabrasSubrayadas = marks.reduce((acc, m) => acc + contarPalabras(m.text), 0)
+  const totalPalabrasSubrayadas = marks.reduce((acc, m) => acc + contarPalabras(m.texto), 0)
   const totalPalabras = contarPalabras(datos.textoOrigen)
   const ratio = totalPalabras > 0 ? Math.round((totalPalabrasSubrayadas / totalPalabras) * 100) : 0
 
   const generarPrompt = () => {
     let resumen = ''
     SB_CATEGORIAS.forEach(cat => {
-      const items = marksParaCategoria(cat.id)
-      resumen += `\n${cat.nombre}:\n` + (items.length ? items.map(i => `  - "${i.text}"`).join('\n') : '  - [Sin selecciones]')
+      const elementos = marksParaCategoria(cat.id)
+      resumen += `\n${cat.nombre}:\n` + (elementos.length ? elementos.map(i => `  - "${i.texto}"`).join('\n') : '  - [Sin selecciones]')
     })
     const p = `Actúa como docente experto en comprensión lectora.\n\nEVALUACIÓN DE SUBRAYADO JERÁRQUICO\nTema: "${datos.subtitulo}"\n\nTEXTO COMPLETO:\n"${datos.textoOrigen}"\n\n---\nSELECCIONES DEL ESTUDIANTE POR MARCADOR:\n${resumen}\n\nMÉTRICA: ${ratio}% del texto fue subrayado.\n\n---\nPOR FAVOR EVALÚA:\n1. Compará las selecciones del estudiante con el criterio ideal de jerarquización.\n2. ¿Clasificó correctamente cada tipo de dato (Conceptos vs Datos vs Causas)?\n3. Proporcioná una calificación del 1 al 10 y una recomendación de mejora.`
     setPromptText(p)
@@ -4421,8 +4421,8 @@ function SubrayadoView({ datos }) {
   }
 
   const copiarPrompt = () => {
-    const text = promptText || (() => { generarPrompt(); return promptText })()
-    navigator.clipboard.writeText(text).then(() => {
+    const texto = promptText || (() => { generarPrompt(); return promptText })()
+    navigator.clipboard.writeText(texto).then(() => {
       setPromptCopied(true)
       setTimeout(() => setPromptCopied(false), 2500)
     })
@@ -4432,7 +4432,7 @@ function SubrayadoView({ datos }) {
     <div className="sb-wrap">
       {/* Header */}
       <div className="sb-header">
-        <div className="sb-header-text">
+        <div className="sb-header-texto">
           <span className="sb-eyebrow">{datos.tituloPagina}</span>
           <h2 className="sb-titulo">{datos.subtitulo}</h2>
           <div className="sb-meta">{datos.asignatura} · {datos.fecha}</div>
@@ -4441,15 +4441,15 @@ function SubrayadoView({ datos }) {
       </div>
 
       <div className="sb-layout">
-        {/* Left: text + toolbar */}
+        {/* Left: texto + toolbar */}
         <div className="sb-left">
           {/* Palette */}
           <div className="sb-palette">
             {SB_CATEGORIAS.map(cat => (
               <button
                 key={cat.id}
-                className={`sb-hl-btn ${colorActivo === cat.id ? 'active' : ''} sb-btn-${cat.id}`}
-                onClick={() => { setColorActivo(cat.id); if (savedRangeRef.current || (window.getSelection() && !window.getSelection().isCollapsed)) applyHighlight(cat.id) }}
+                className={`sb-hl-btn ${colorActivo === cat.id ? 'activo' : ''} sb-btn-${cat.id}`}
+                onClick={() => { setColorActivo(cat.id); if (savedRangeRef.actual || (window.getSelection() && !window.getSelection().isCollapsed)) applyHighlight(cat.id) }}
               >
                 <span className="sb-btn-dot sb-dot-{cat.id}" style={{ width: 9, height: 9, borderRadius: '50%', display: 'inline-block', background: `var(--sb-${cat.id})` }} />
                 {cat.nombre}
@@ -4489,13 +4489,13 @@ function SubrayadoView({ datos }) {
               <b>Análisis de cobertura ({ratio}% resaltado) — Comparación con el subrayado ideal:</b>
               <div className="sb-ideal-block">
                 <div className="sb-ideal-label">Propuesta de subrayado ideal:</div>
-                <div className="sb-ideal-text" dangerouslySetInnerHTML={{ __html: datos.textoSubrayadoIdealHTML }} />
+                <div className="sb-ideal-texto" dangerouslySetInnerHTML={{ __html: datos.textoSubrayadoIdealHTML }} />
               </div>
             </div>
           )}
 
           {promptText && (
-            <textarea className="sb-prompt-ta" readOnly value={promptText} />
+            <textarea className="sb-prompt-ta" readOnly valor={promptText} />
           )}
         </div>
 
@@ -4505,19 +4505,19 @@ function SubrayadoView({ datos }) {
             <h3 className="sb-panel-title">Extracción Lateral</h3>
           </div>
           {SB_CATEGORIAS.map(cat => {
-            const items = marksParaCategoria(cat.id)
+            const elementos = marksParaCategoria(cat.id)
             return (
               <div key={cat.id} className="sb-cat-group">
                 <div className={`sb-cat-title sb-cat-${cat.id}`}>
                   <span>{cat.nombre}</span>
-                  <span className="sb-cat-count">{items.length}</span>
+                  <span className="sb-cat-contador">{elementos.length}</span>
                 </div>
-                <ul className="sb-extracted-list">
-                  {items.length === 0
+                <ul className="sb-extracted-lista">
+                  {elementos.length === 0
                     ? <li className="sb-empty-msg">Sin selecciones.</li>
-                    : items.map(item => (
+                    : elementos.map(item => (
                       <li key={item.id} className="sb-extracted-item">
-                        <span>"{item.text}"</span>
+                        <span>"{item.texto}"</span>
                       </li>
                     ))
                   }
@@ -4534,7 +4534,7 @@ function SubrayadoView({ datos }) {
 // ============================================================
 // TIMELINE VIEW
 // ============================================================
-function TimelineView({ datos }) {
+function VistaLineaTiempo({ datos }) {
   if (!datos || !datos.eventos) return null;
   return (
     <div className="tl-wrapper">
@@ -4542,7 +4542,7 @@ function TimelineView({ datos }) {
         <h2 className="tl-title">{datos.tituloPagina}</h2>
         <p className="tl-subtitle">{datos.subtitulo}</p>
       </div>
-      <div className="tl-list">
+      <div className="tl-lista">
         {(datos.eventos || []).map((ev, i) => (
           <div key={i} className="tl-item">
             <div className="tl-spine">
@@ -4567,7 +4567,7 @@ function TimelineView({ datos }) {
 // ============================================================
 // TABLA COMPARATIVA VIEW
 // ============================================================
-function TablaView({ datos }) {
+function VistaTabla({ datos }) {
   if (!datos || !datos.filas || !datos.entidades) return null;
   return (
     <div className="tc-wrapper">
@@ -4601,7 +4601,7 @@ function TablaView({ datos }) {
   );
 }
 
-function AppWrapper() {
+function EnvoltorioAplicacion() {
   const [extraNotice, setExtraNotice] = useState('');
   useGlobalNotice(setExtraNotice);
   return (
@@ -4613,13 +4613,13 @@ function AppWrapper() {
 }
 
 createRoot(document.getElementById('root')).render(
-  <ErrorBoundary fallback={() => (
+  <LimiteError alternativa={() => (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: 10, fontFamily: 'sans-serif', textAlign: 'center', padding: 20 }}>
       <b style={{ fontSize: 16, color: '#303249' }}>Algo salió mal.</b>
       <p style={{ fontSize: 13, color: '#88859c', maxWidth: 340 }}>Recargá la página para volver a intentarlo. Tu biblioteca y tu progreso quedaron guardados.</p>
       <button onClick={() => location.reload()} style={{ background: '#7766c9', color: '#fff', border: 'none', padding: '9px 20px', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}>Recargar</button>
     </div>
   )}>
-    <AppWrapper />
-  </ErrorBoundary>
+    <EnvoltorioAplicacion />
+  </LimiteError>
 )
